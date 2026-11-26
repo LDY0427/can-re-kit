@@ -1,0 +1,165 @@
+# KTM 390 Duke (2016, first generation) stock engine ECU, diagnostic CAN.
+# Measured on one vehicle: a student formula car using this engine and its stock ECU,
+# November 2026. ABS and the stock dash were not on the bus. See case-studies/ktm-390-duke-2016.md.
+#
+# confidence: measured | inferred | reported | standard  (see docs/06-documenting.md)
+
+vehicle:
+  make: KTM
+  model: 390 Duke
+  year: 2016
+  ecu: stock engine ECU (Bosch family, exact type not confirmed)
+  notes: >
+    The engine ECU was the only node on the bus. Values here are what the ECU itself reports;
+    an aftermarket fuel module downstream can change what actually reaches the injector and coil.
+
+bus:
+  bitrate_kbps: {value: 500, confidence: measured, evidence: "ECU answered 01 00 at 500 kbps (ELM327 and direct CAN adapter)"}
+  id_bits: {value: 11, confidence: measured, evidence: "answer ID 7E8"}
+  request_id: {value: "7DF", confidence: measured, evidence: "functional address 7DF answered; 7E0 not tried"}
+  response_id: {value: "7E8", confidence: measured, evidence: "only one ECU answered"}
+  session: {value: "default session, no start needed", confidence: measured, evidence: "answers on two days without a session request"}
+  termination_ohm: {value: "127-129", confidence: measured, evidence: "CAN-H to CAN-L with key OFF; one 120 ohm terminator on the bus"}
+  broadcast: {value: "none with engine off", confidence: measured, evidence: "200 s listen, key ON, engine off: 0 frames. Engine running not yet checked"}
+  diag_connector:
+    value: "6-pin: 1 +12V, 2 CAN-H, 3 CAN-L, 6 ground"
+    confidence: reported
+    evidence: "three public sources agree (adapter pin table, owner forum, data-logger vendor note for later 390s). Our car had a different connector; check with a meter"
+  poll_limit:
+    value: "about 100 answers/s (10 ms spacing); 5 ms spacing all late"
+    confidence: measured
+    evidence: "direct adapter, engine off, repeated twice; latency 0.7-11.1 ms with a 10 ms saw-tooth"
+  answered_21: "20-30 33 39 3A 3B 3C 3D 3F 42 44 45 48 4A 4B 4C 61-66 (37 IDs)"
+  answered_01: "01 05 06 07 0B 0D 0E 0F 11 13 14 1C 21 30 31 4F 50; 01 0C (RPM) gets no answer"
+
+diag_signals:
+  - name: rpm
+    request: "21 21"
+    byte: 0
+    length: 2
+    endian: big
+    scale: 0.25
+    unit: rpm
+    confidence: measured
+    evidence: "crank counter 21 64 rose 5294/min vs time-weighted mean 5268 rpm (ratio 1.005, 59 s). Scale known to +/-5 %"
+  - name: crank_revs
+    request: "21 64"
+    byte: 0
+    length: 4
+    endian: big
+    scale: 1
+    unit: rev
+    confidence: measured
+    evidence: "0 with engine off, rises with running engine; used to check rpm scale"
+  - name: half_crank_count
+    request: "21 63"
+    byte: 0
+    length: 4
+    endian: big
+    scale: 1
+    unit: count
+    confidence: measured
+    evidence: "ratio to 21 64 is 2.00-2.02 (likely combustion count on a 4-stroke)"
+  - name: throttle_sensor_raw
+    request: "21 3B"
+    byte: 0
+    length: 2
+    endian: big
+    scale: 0.0243
+    unit: "%"
+    confidence: measured
+    evidence: "vs standard 01 11 (absolute throttle %, reads ~17 % closed): r 1.000 over 84 samples engine off, 0.992 running. Raw closed 676-696, wide open 3678-3684"
+  - name: throttle_opening
+    request: "21 2A"
+    byte: 0
+    length: 1
+    endian: big
+    unit: raw
+    confidence: measured
+    evidence: "closed 07, wide open FD-FE; r 0.998 vs 01 11"
+  - name: coolant_temp
+    request: "21 22"
+    byte: 0
+    length: 1
+    endian: big
+    scale: 0.75
+    offset: -48
+    unit: C
+    confidence: measured
+    evidence: "matches standard 01 05 at 29 C and 43-51 C (r 0.99). Hot range not yet covered"
+  - name: map
+    request: "21 4A"
+    byte: 0
+    length: 2
+    endian: big
+    scale: 0.00390625
+    unit: kPa
+    confidence: measured
+    evidence: "value/256 vs standard 01 0B over 26-117 kPa, r 0.993"
+  - name: map_sensor_raw
+    request: "21 39"
+    byte: 0
+    length: 2
+    endian: big
+    scale: 0.11
+    offset: 9
+    unit: kPa
+    confidence: inferred
+    evidence: "same fit in two logs (r 0.90, 0.96); offset 8-10"
+  - name: engine_running
+    request: "21 42"
+    byte: 0
+    length: 1
+    endian: big
+    unit: flag
+    confidence: measured
+    evidence: "00 stopped, 01 running, 7 logs"
+  - name: load_like
+    request: "21 24"
+    byte: 0
+    length: 2
+    endian: big
+    unit: raw
+    confidence: inferred
+    evidence: "follows rpm x MAP (r 0.93). Air mass or fuel flow family; needs a loaded run"
+  - name: advance_like
+    request: "21 25"
+    byte: 0
+    length: 1
+    endian: big
+    scale: 0.65
+    offset: 3
+    unit: deg
+    confidence: inferred
+    evidence: "moves with standard 01 0E (r 0.91-0.93); fit not yet stable across logs"
+  - name: std_coolant
+    request: "01 05"
+    byte: 0
+    length: 1
+    scale: 1
+    offset: -40
+    unit: C
+    confidence: standard
+  - name: std_map
+    request: "01 0B"
+    byte: 0
+    length: 1
+    scale: 1
+    unit: kPa
+    confidence: standard
+  - name: std_throttle
+    request: "01 11"
+    byte: 0
+    length: 1
+    scale: 0.392157
+    unit: "%"
+    confidence: standard
+
+broadcast_signals: []
+
+open_questions:
+  - "Does the ECU broadcast anything while the engine runs? (only engine-off listening done)"
+  - "Meaning of 21 26, 27, 2B, 2C, 3F; which ID is injection time"
+  - "Manufacturer codes P1502 P1505 P1506 P1601 P1606 P1607"
+  - "MAP reads 116-117 kPa with engine off (ambient ~101): sensor offset or sampling? Compare with a gauge"
+  - "Exact rpm scale (256 vs a reported 264.12): hold a steady rpm for 20 s and compare with 21 64"

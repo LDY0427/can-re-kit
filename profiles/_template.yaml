@@ -1,0 +1,47 @@
+# Copy to profiles/<make>-<model>-<year>.yaml and fill in what you actually checked.
+# Leave out what you do not know; put it under open_questions instead of guessing.
+#
+# confidence:
+#   measured  checked on the vehicle against an independent reference (say which, how many samples)
+#   inferred  a pattern in your logs, not yet confirmed by a deliberate test
+#   reported  someone else's claim (forum, article, other model); not checked by you
+#   standard  a public standard formula (SAE J1979 ...)
+
+vehicle:
+  make: Example
+  model: Model
+  year: 2020
+  ecu: "what is printed on the ECU label, or 'unknown'"
+  notes: "what else was on the bus (ABS, dash, aftermarket modules)"
+
+bus:
+  bitrate_kbps: {value: 500, confidence: measured, evidence: "how you found it"}
+  request_id: {value: "7DF", confidence: measured, evidence: ""}
+  response_id: {value: "7E8", confidence: measured, evidence: ""}
+
+diag_signals:
+  # Values you get by asking (request -> answer).
+  - name: rpm
+    request: "01 0C"       # bytes you send, without the length byte
+    byte: 0                # start inside the value (after the echoed service/ID bytes)
+    length: 2
+    endian: big
+    scale: 0.25            # physical = raw * scale + offset; omit scale for raw-only
+    offset: 0
+    unit: rpm
+    confidence: standard
+
+broadcast_signals:
+  # Values the bus carries on its own (periodic frames).
+  # - name: wheel_speed_front
+  #   id: "12B"
+  #   start_byte: 0
+  #   length: 2
+  #   endian: big
+  #   scale: 0.01
+  #   unit: km/h
+  #   confidence: inferred
+  #   evidence: "rose with the wheel turned by hand; no reference yet"
+
+open_questions:
+  - "what is still unknown"

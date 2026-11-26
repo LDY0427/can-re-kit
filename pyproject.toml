@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "canre"
+version = "0.1.0"
+description = "Read-only CAN reverse-engineering kit for cars and motorcycles: sniff, query, scan, correlate, document."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = ["python-can>=4.2", "numpy>=1.22", "pyyaml>=6.0", "pyserial>=3.5"]
+keywords = ["can", "obd", "reverse-engineering", "motorcycle", "ecu", "iso-tp"]
+
+[project.optional-dependencies]
+test = ["pytest>=7.0"]
+
+[project.scripts]
+canre = "canre.__main__:main"
+
+[tool.setuptools]
+packages = ["canre"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
