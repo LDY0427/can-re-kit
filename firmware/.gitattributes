@@ -1,0 +1,4 @@
+# Golden outputs and test vectors are compared byte for byte: keep LF on every OS
+test/golden/** text eol=lf
+test/vectors/** text eol=lf
+*.mjs text eol=lf
