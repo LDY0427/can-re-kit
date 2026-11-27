@@ -1,46 +1,48 @@
-# 3. 버스 찾기 — 어디에 무엇이 흐르나
+# 3. Finding the bus — what flows where
 
-## 1) 문서부터
+[한국어](ko/03-finding-the-bus.md)
 
-1. 정비서·배선도에서 ECU 핀 중 `CAN-H` `CAN-L` `K-LINE` `DIAG`를 찾는다. 정비서는 사서 보거나 빌려 본다(내용을 공개 저장소에 옮기지 않는다).
-2. 진단 커넥터 핀 배치를 찾는다. 여러 출처가 **서로 일치하는지** 본다. 한 출처뿐이면 `reported`로만 적는다.
-3. 버스에 붙은 장치를 적는다: 엔진 ECU, ABS, 계기판, 스마트키, 퀵시프터, 애프터마켓 모듈. 이 목록이 상시 프레임이 있을지 정한다.
+## 1) Documents first
 
-## 2) 차량 종류별로 먼저 볼 곳
+1. In the service manual and wiring diagram, find the ECU pins named `CAN-H`, `CAN-L`, `K-LINE`, `DIAG`. Buy or borrow the manual (do not copy its contents into a public repository).
+2. Find the diagnostic connector pinout. Check whether **several sources agree**. With only one source, record it as `reported`.
+3. List the devices on the bus: engine ECU, ABS, dash, smart key, quickshifter, aftermarket modules. This list decides whether broadcast frames are likely.
 
-| 종류 | 진단 커넥터 | 버스 | 비고 |
+## 2) Where to look first, by vehicle type
+
+| Type | Diagnostic connector | Bus | Notes |
 |---|---|---|---|
-| 승용차(대략 2008년 이후) | 운전석 아래 OBD-II 16핀 | 6번 CAN-H, 14번 CAN-L, 16번 12 V, 4·5번 접지 | 진단 포트 뒤에 게이트웨이가 있어 상시 프레임이 안 보이는 차가 많다 |
-| 오토바이 | 시트 밑·배터리 근처, 제조사 전용 커넥터가 흔하다 | CAN 또는 K-line | 아래 표와 7장 |
-| 경주용·개조 차량 | 배선 하네스 안 | 엔진 ECU 단독일 수 있다 | ABS·계기판을 뗐다면 상시 프레임이 없을 수 있다 |
+| Car (roughly 2008 on) | OBD-II 16-pin under the dash | pin 6 CAN-H, 14 CAN-L, 16 12 V, 4/5 ground | Many cars have a gateway behind the port, so broadcast frames are not visible there |
+| Motorcycle | Under the seat or near the battery; manufacturer-specific connectors are common | CAN or K-line | Table below and chapter 7 |
+| Race / modified vehicle | Inside the harness | May be the engine ECU alone | With ABS and dash removed there may be no broadcast frames |
 
-오토바이 진단 커넥터는 차종·연식마다 다르다. 공개 자료로 알려진 대략의 경향(**모두 `reported`: 내 차에서 테스터로 확인할 것**):
+Motorcycle diagnostic connectors differ by model and year. Rough trends from public sources (**all `reported`: check your own vehicle with a meter**):
 
-- 유럽 일부 브랜드의 최신 모델은 CAN 진단을 쓰고, 계기판·ABS와 CAN으로 이어져 상시 프레임이 있다는 보고가 많다.
-- 일본 브랜드의 예전 모델은 K-line 진단이 많다(4·6핀 전용 커넥터).
-- 미국 크루저 계열은 연식에 따라 J1850과 CAN이 갈린다.
-- 국제 표준 ISO 19689가 오토바이 진단 커넥터를 정하지만 모든 차가 따르지는 않는다.
+- Recent models from some European brands use CAN diagnostics and are connected to the dash and ABS over CAN; broadcast frames are widely reported.
+- Older Japanese models often use K-line diagnostics (manufacturer 4- and 6-pin connectors).
+- American cruisers split between J1850 and CAN depending on year.
+- ISO 19689 defines a motorcycle diagnostic connector, but not every vehicle follows it.
 
-알게 된 것은 `profiles/`에 차종별로 남겨 달라(6장).
+Please record what you find per model in `profiles/` (chapter 6).
 
-## 3) 테스터로 가르기
+## 3) Telling them apart with a meter
 
-| 잰 것 | CAN일 때 | K-line일 때 |
+| Measurement | CAN | K-line |
 |---|---|---|
-| 두 선 사이 저항(키 OFF) | 약 60 Ω 또는 120 Ω | 한 가닥이라 짝이 없다 |
-| 키 ON 전압(조용할 때) | 두 선 모두 약 2.5 V | 약 12 V(배터리 전압으로 풀업) |
-| 통신 중 | H 2.5↔3.5 V, L 2.5↔1.5 V가 서로 반대로 | 12 V ↔ 0 V |
+| Resistance between two wires (key OFF) | about 60 Ω or 120 Ω | Single wire, no pair |
+| Key ON voltage (idle) | Both wires about 2.5 V | About 12 V (pulled up to battery) |
+| While communicating | H 2.5↔3.5 V and L 2.5↔1.5 V, moving in opposite directions | 12 V ↔ 0 V |
 
-오실로스코프가 있으면 한 비트 폭으로 속도를 바로 읽는다: 2 µs = 500 kbps, 4 µs = 250 kbps.
+With an oscilloscope, one bit width gives the bitrate directly: 2 µs = 500 kbps, 4 µs = 250 kbps.
 
-## 4) 듣기 → 묻기
+## 4) Listen → ask
 
 ```bash
-canre bitrate -i slcan -c COM7          # 500/250/125/1000 kbps를 듣기 전용으로 5초씩
-canre listen  -i slcan -c COM7 -s 60    # 맞는 속도에서 60초 듣고 ID 표
-canre ping    -i slcan -c COM7          # 조용하면: 01 00 한 번만 묻는다
+canre bitrate -i slcan -c COM7          # listen-only at 500/250/125/1000 kbps, 5 s each
+canre listen  -i slcan -c COM7 -s 60    # 60 s at the right bitrate, then the ID table
+canre ping    -i slcan -c COM7          # if quiet: ask 01 00 exactly once
 ```
 
-- `bitrate`에서 프레임이 보이고 오류가 0인 속도가 답이다.
-- 어느 속도에서도 아무것도 없으면 버스가 조용한 것이다(우리 차처럼). 그때 `ping`. 답이 오면 속도와 결선이 맞다.
-- `ping`도 답이 없으면: 키 ON인지, `--bitrate 250`, H·L 바꾸기, 종단, 접지 순서로 본다. 그래도 없으면 K-line일 가능성이 높다.
+- In `bitrate`, the rate with frames and zero errors is the answer.
+- If nothing shows at any rate, the bus is quiet (like ours). Then `ping`. If it answers, bitrate and wiring are right.
+- If `ping` also gets nothing: check key ON, `--bitrate 250`, swap H/L, termination, ground, in that order. If still nothing, it is probably K-line.

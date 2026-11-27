@@ -1,5 +1,7 @@
 # can-re-kit — 차량 CAN 역공학, 읽기만 하는 방법과 도구
 
+[English](README.md) · 기본 문서는 영어이고, 한국어판은 `docs/ko/`에 있다.
+
 학생 포뮬러 차량에 쓰는 오토바이 엔진(KTM 390 Duke, 2016)의 순정 ECU에서 회전수·스로틀·수온·흡기압을 받아야 했다. 그 ECU에 대한 공개 자료는 거의 없었고, 버스는 조용했다. 이 저장소는 그때 쓴 방법을 **다른 오토바이·자동차에도 쓸 수 있게** 정리한 것이다.
 
 ## 들어 있는 것
@@ -27,16 +29,16 @@ canre analyze logs/demo.csv --reference "01 11"     # 스로틀과 같이 움직
 
 ## 읽는 순서
 
-1. [0. 안전과 법](docs/00-safety-and-law.md) ← 반드시 먼저
-2. [1. 개념](docs/01-concepts.md) — 상시 프레임과 요청·응답, ISO-TP, 서비스 번호
-3. [2. 장비와 배선](docs/02-hardware.md)
-4. [3. 버스 찾기](docs/03-finding-the-bus.md) — 커넥터, CAN과 K-line 가르기, 속도
-5. [4. 절차](docs/04-workflow.md) — 0~9단계
-6. [5. 뜻 찾기](docs/05-decoding.md) — 대어 보기, 식 다듬기, 함정 8가지
-7. [6. 기록하고 나누기](docs/06-documenting.md)
-8. [7. 오토바이와 다른 차량](docs/07-other-vehicles.md)
-9. [사례: KTM 390 Duke 2016](case-studies/ktm-390-duke-2016.md)
-10. [ESP32-S3 펌웨어](firmware/README.md)
+1. [0. 안전과 법](docs/ko/00-safety-and-law.md) ← 반드시 먼저
+2. [1. 개념](docs/ko/01-concepts.md) — 상시 프레임과 요청·응답, ISO-TP, 서비스 번호
+3. [2. 장비와 배선](docs/ko/02-hardware.md)
+4. [3. 버스 찾기](docs/ko/03-finding-the-bus.md) — 커넥터, CAN과 K-line 가르기, 속도
+5. [4. 절차](docs/ko/04-workflow.md) — 0~9단계
+6. [5. 뜻 찾기](docs/ko/05-decoding.md) — 대어 보기, 식 다듬기, 함정 8가지
+7. [6. 기록하고 나누기](docs/ko/06-documenting.md)
+8. [7. 오토바이와 다른 차량](docs/ko/07-other-vehicles.md)
+9. [사례: KTM 390 Duke 2016](case-studies/ko/ktm-390-duke-2016.md)
+10. [ESP32-S3 펌웨어](firmware/README.ko.md)
 
 ## 한계
 

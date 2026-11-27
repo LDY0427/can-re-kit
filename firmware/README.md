@@ -1,128 +1,131 @@
-# firmware — ESP32-S3 진단 CAN 읽기 펌웨어 (stock-can-tool v2)
+# firmware — ESP32-S3 diagnostic CAN reader (stock-can-tool v2)
 
-1만 원 안팎의 ESP32-S3 개발보드와 CAN 트랜시버 모듈로 차량 진단 CAN에 **직접** 물리는 도구다. ELM327과 달리 어댑터가 응답 속도를 가리지 않아서 **ECU 자체의 한계**(초당 몇 번 답하는가, 지연이 얼마인가)를 잴 수 있다. 사례 차량에서 초당 100번, 지연 0.7~11.1 ms를 이 펌웨어로 쟀다([사례](../case-studies/ktm-390-duke-2016.md)).
+[한국어](README.ko.md)
 
-- PC의 `canre`에서 어댑터로 쓴다: `canre -i esp32 -c COM9 ping`.
-- 시리얼 터미널에서 명령을 직접 쳐도 된다(921600 baud).
-- **읽기 요청만 보낸다.** 서비스 `01 02 03 07 09 0A 1A 21 22`만 허용하고, 요청 ID는 `7DF`, `7E0`~`7E7`만 쓴다. 쓰기·고장 코드 지우기·보안 접근·재시작은 보낼 방법이 없다(`components/sct_core/src/policy.c`). `canre`도 같은 검사를 한 번 더 한다.
+A tool that connects **directly** to a vehicle's diagnostic CAN with a ~$10 ESP32-S3 dev board and a CAN transceiver module. Unlike an ELM327 the adapter does not hide the answer timing, so you can measure **the ECU's own limits** (how many answers per second, how much latency). On the case-study vehicle this firmware measured 100 per second and 0.7–11.1 ms ([case study](../case-studies/ktm-390-duke-2016.md)).
 
-## 확인 수준
+- Use it as an adapter from `canre` on the PC: `canre -i esp32 -c COM9 ping`.
+- Or type commands directly in a serial terminal (921600 baud).
+- **It sends read requests only.** Only services `01 02 03 07 09 0A 1A 21 22` and request IDs `7DF`, `7E0`–`7E7` are allowed. There is no way to send write, clear-codes, security access or reset (`components/sct_core/src/policy.c`). `canre` checks again on its side.
+- The firmware's console messages are in Korean for now; the machine-readable lines (`ANS`, `RX`, `ERR`, …) are language-independent.
 
-| 무엇 | 상태 |
+## Verification level
+
+| What | Status |
 |---|---|
-| 2.0.0 | 개발보드 + SN65HVD230 모듈로 실차(사례 차량)에서 사용. 듣기 200초, 엔진 가동 중 20 ms 간격 15,000번 요청 |
-| 2.0.1 (지금 판) | 실차 측정에서 드러난 결함 수정. **PC 가상 시험과 ESP-IDF 빌드만 했다. 보드에 올려 본 적은 없다** |
-| `rpmsrc` (공개판에서 더함) | 회전수 요청을 차마다 바꿀 수 있게 함. PC 가상 시험과 빌드만 했다 |
-| `canre -i esp32` | 이 펌웨어의 가상 빌드(WebAssembly)를 상대로 시험. 실제 보드와 연결은 아직 |
+| 2.0.0 | Used on the case-study vehicle with a dev board + SN65HVD230 module. 200 s listening, 15,000 requests at 20 ms spacing with the engine running |
+| 2.0.1 (current) | Fixes for defects found in the vehicle measurements. **Tested in PC simulation and built with ESP-IDF only. Not yet flashed to a board** |
+| `rpmsrc` (added for the public release) | RPM request configurable per vehicle. Simulation and build only |
+| `canre -i esp32` | Tested against this firmware's simulated (WebAssembly) build. Not yet with a real board |
 
-## 준비물과 배선
+## Parts and wiring
 
-| 부품 | 예 |
+| Part | Example |
 |---|---|
-| ESP32-S3 개발보드 | ESP32-S3-DevKitC-1 계열 (N8R2, N16R8 등 아무거나) |
-| 3.3 V CAN 트랜시버 모듈 | SN65HVD230, TJA1051T/3 모듈 |
-| 꼬임선, 훅 클립 또는 뒤쪽 끼움 핀 | |
+| ESP32-S3 dev board | ESP32-S3-DevKitC-1 family (N8R2, N16R8, any) |
+| 3.3 V CAN transceiver module | SN65HVD230, TJA1051T/3 module |
+| Twisted pair, hook clips or back-probe pins | |
 
 ```
- ESP32-S3            트랜시버 모듈         차량
+ ESP32-S3            Transceiver module    Vehicle
  GPIO13 (TX) ─────── CTX / TXD
  GPIO14 (RX) ─────── CRX / RXD
  3V3 ─────────────── 3V3
- GND ─────────────── GND ─────────────── 차량 접지
+ GND ─────────────── GND ─────────────── Vehicle ground
                      CANH ────────────── CAN-H
                      CANL ────────────── CAN-L
 ```
 
-- 콘솔은 개발보드의 UART 쪽 USB 포트(UART0), 921600 baud.
-- 모듈에 120 Ω 종단이 붙어 있는 경우가 많다. 모듈만 따로 H–L 저항을 재고, 버스 상태에 따라 떼거나 둔다([docs/02](../docs/02-hardware.md)).
-- **보드에 USB 전원을 먼저 넣고 그다음에 CAN 선을 문다. 차에 물린 채로 굽거나 리셋하지 않는다.** 굽는 중과 리셋 직후에는 프로그램이 TX 핀을 잡지 못해 버스를 흔들 수 있다.
-- GPIO19·20(USB)과 부팅 설정 핀은 CAN에 쓰지 않는다.
+- The console is the dev board's UART-side USB port (UART0), 921600 baud.
+- Modules often carry a 120 Ω terminator. Measure the module's H–L resistance on its own and remove or keep it depending on the bus ([docs/02](../docs/02-hardware.md)).
+- **Power the board over USB first, then connect the CAN wires. Never flash or reset it while it is connected to the vehicle.** While flashing and right after reset the program does not hold the TX pin and can disturb the bus.
+- Do not use GPIO19/20 (USB) or boot-strapping pins for CAN.
 
-## 빌드와 올리기
+## Build and flash
 
-ESP-IDF 5.5 기준.
+ESP-IDF 5.5.
 
 ```bash
 cd firmware
-idf.py set-target esp32s3      # 처음 한 번
+idf.py set-target esp32s3      # once
 idf.py build
-idf.py -p COM9 flash monitor   # 차에서 떼고 한다
+idf.py -p COM9 flash monitor   # with the board disconnected from the vehicle
 ```
 
-`sdkconfig.defaults.module`은 이 저장소에 회로가 없는 전용 모듈 보드(Rev.A0: TX GPIO21, 하드웨어 송신 잠금 스위치, 전압 측정)용 설정이다. 개발보드 조합에는 필요 없다.
+`sdkconfig.defaults.module` is for a dedicated module board whose schematic is not in this repository (Rev.A0: TX on GPIO21, hardware transmit-lock switch, voltage measurement). The dev-board combination does not need it.
 
-## 명령
+## Commands
 
-| 명령 | 하는 일 |
+| Command | What it does |
 |---|---|
-| `auto` | 듣기 전용으로 500·250·125·1000 kbps를 5초씩 |
-| `listen <kbps> [초]` | 듣기 전용(ACK 안 줌)으로 받아 적기. 끝에 ID 표, 바이트 변화, 버스 부하 |
-| `watch <kbps> [초]` | 일반 모드(ACK 줌)로 받아 적기. ECU 혼자 있는 버스에서 쓴다 |
-| `ping [kbps]` | 0.3초 듣고 `01 00` 한 번. ACK가 오면 속도·결선이 맞다 |
-| `req <바이트…>` | 읽기 요청 하나(길이 바이트는 적지 않는다). 예: `req 21 21` |
-| `rpmsrc [바이트… [div N] \| none]` | 회전수를 읽는 요청. 기본 `01 0C` ÷ 4. 표준 회전수가 없는 ECU는 바꾼다(예: `rpmsrc 21 21`). `none`이면 엔진 정지를 사람이 확인한다 |
-| `rpm` | `rpmsrc` 요청 하나 |
-| `pids` | 표준 PID 지원 목록과 값 |
-| `dtc` | 고장 코드 `03`·`07`·`0A` 읽기(지우지 않는다) |
-| `scan21 [시작] [끝]` | 서비스 21 번호 훑기. 회전수 0을 확인한 뒤에만, 8개마다 회전수·고장 코드 재확인, 달라지면 멈춤 |
-| `poll <ms> <횟수> <요청> [/ 요청…] [every N]` | 반복 요청. 지연 분포, 초당 횟수 요약 |
-| `target <ID>` / `speed <kbps>` | 요청 ID(`7DF`, `7E0`~`7E7`), 요청 속도 |
+| `auto` | Listen-only at 500, 250, 125, 1000 kbps, 5 s each |
+| `listen <kbps> [s]` | Record in listen-only mode (no ACK). Ends with the ID table, byte changes, bus load |
+| `watch <kbps> [s]` | Record in normal mode (ACKs). Use on a bus where the ECU is alone |
+| `ping [kbps]` | Listen 0.3 s, then send `01 00` once. An ACK means bitrate and wiring are right |
+| `req <bytes…>` | One read request (without the length byte). E.g. `req 21 21` |
+| `rpmsrc [bytes… [div N] \| none]` | The request used to read RPM. Default `01 0C` ÷ 4. Change it for ECUs without standard RPM (e.g. `rpmsrc 21 21`). With `none` a person confirms the engine is off |
+| `rpm` | One `rpmsrc` request |
+| `pids` | Supported standard PIDs and their values |
+| `dtc` | Read trouble codes `03`, `07`, `0A` (never clears) |
+| `scan21 [start] [end]` | Scan service 21 identifiers. Only after confirming RPM 0; re-checks RPM and trouble codes every 8; stops if they change |
+| `poll <ms> <count> <req> [/ req…] [every N]` | Repeated requests. Latency distribution and rate summary |
+| `target <ID>` / `speed <kbps>` | Request ID (`7DF`, `7E0`–`7E7`), request bitrate |
 | `print on\|off` / `status` / `hello` / `close` / `help` | |
-| `loopback bench` | 책상 전용 자체 시험(조용한 버스에서 자기 수신 한 번) |
-| 명령 끝에 `force` | 송신 전 듣기에서 버스 오류가 보여도 보낸다. 500 kbps에서만 |
+| `loopback bench` | Desk-only self test (one self-reception on a quiet bus) |
+| `force` at the end of a command | Send even if bus errors were seen in the pre-send listen. 500 kbps only |
 
-명령이 도는 동안 들어온 입력은 "멈춤"으로 본다. 다음 명령은 `# done`을 본 뒤 보낸다.
+Input received while a command runs is treated as "stop". Send the next command after you see `# done`.
 
-## 줄 형식 (펌웨어 → PC)
+## Line format (firmware → PC)
 
-한 줄에 하나, 쉼표 구분. `#`으로 시작하면 사람이 읽는 말. 명령마다 끝에 `# done`. 시각은 부팅 뒤 밀리초.
+One per line, comma-separated. Lines starting with `#` are for people. Every command ends with `# done`. Time is milliseconds since boot.
 
-| 줄 | 내용 |
+| Line | Content |
 |---|---|
-| `HELLO,stock-can-tool,<판>,<보드>,2,<빌드 날짜>` | 부팅과 `hello` |
-| `RX,시각,ID,길이,데이터` | 받은 프레임(29비트 ID는 앞에 `x`) |
-| `REQ,시각,요청 ID,길이,데이터,속도kbps` | 보낸 요청 |
-| `ANS,시각,응답 ID,지연 ms,데이터` | 받은 응답(여러 프레임은 이어 붙여서) |
-| `PARTIAL,받은/전체` | 여러 프레임 응답이 끊김 |
-| `LID,번호,길이,데이터` / `LID,번호,거부,코드,뜻` | `scan21` 한 줄 |
-| `POLL,시각,지연,데이터[,회전수]` / `POLLSUM` `POLLHIST` | `poll` 한 줄과 요약 |
-| `DTC,…` | 고장 코드 |
-| `IDX,ID,개수,DLC,주기…,바이트별 변화,첫 데이터,끝 데이터` | 듣기 끝의 ID 표 |
-| `STAT,버스오류,REC,TEC,송신실패,놓친프레임,중재패배,ok\|passive\|busoff` | 컨트롤러 상태 |
-| `ERR,번호,열쇠말` | 실패. 예: `ERR,1,no_response`, `ERR,4,blocked_service`, `ERR,17,rpm_unknown` |
+| `HELLO,stock-can-tool,<version>,<board>,2,<build date>` | At boot and on `hello` |
+| `RX,time,ID,length,data` | Received frame (29-bit IDs prefixed with `x`) |
+| `REQ,time,request ID,length,data,bitrate kbps` | Request sent |
+| `ANS,time,response ID,latency ms,data` | Answer received (multi-frame answers joined) |
+| `PARTIAL,received/total` | A multi-frame answer was cut off |
+| `LID,ID,length,data` / `LID,ID,refused,code,meaning` | One `scan21` line |
+| `POLL,time,latency,data[,rpm]` / `POLLSUM` `POLLHIST` | One `poll` line and summaries |
+| `DTC,…` | Trouble codes |
+| `IDX,ID,count,DLC,period…,per-byte changes,first data,last data` | ID table at the end of listening |
+| `STAT,bus errors,REC,TEC,tx failures,missed frames,arbitration lost,ok\|passive\|busoff` | Controller state |
+| `ERR,number,key` | Failure. E.g. `ERR,1,no_response`, `ERR,4,blocked_service`, `ERR,17,rpm_unknown` |
 
-## 안전 동작
+## Safety behaviour
 
-1. 기본은 듣기 전용. 명령이 끝나면 CAN 드라이버를 내리고 TX 핀을 풀업 입력으로 둔다.
-2. 일반 모드에 들어가기 전에 같은 속도로 0.3초 듣고, 버스 오류가 보이면 들어가지 않는다.
-3. 요청은 단발 송신(재전송 없음). ACK 없음·bus-off면 바로 내린다.
-4. 일반 모드로 듣는 동안 1초에 프레임 0개·버스 오류 50건 초과면 내린다.
-5. `poll`은 ACK 없음이 3번 이어지면 멈춘다. 간격 5 ms 이상, 40,000번 이하.
-6. 오류 수동 상태(TEC·REC ≥ 128)면 내리고 알린다.
-7. `scan21`은 엔진 정지를 확인한 뒤에만 훑고, 고장 코드가 바뀌면 멈춘다. 코드는 지우지 않는다.
+1. Listen-only by default. When a command ends the CAN driver is stopped and the TX pin becomes a pulled-up input.
+2. Before entering normal mode it listens 0.3 s at the same bitrate and does not enter if it sees bus errors.
+3. Requests are single-shot (no retransmission). No ACK or bus-off → stop immediately.
+4. While listening in normal mode, 0 frames and more than 50 bus errors in one second → stop.
+5. `poll` stops after 3 consecutive missing ACKs. Interval 5 ms or more, at most 40,000 requests.
+6. Error-passive state (TEC or REC ≥ 128) → stop and report.
+7. `scan21` scans only after confirming the engine is off, and stops if trouble codes change. It never clears them.
 
-## 구조
+## Structure
 
 ```
- canre(PC) 또는 시리얼 터미널 ── 줄 ──┐
-                                       │
- components/sct_core  (순수 C11, ESP-IDF·heap 안 씀)
-   cli.c 명령 · diag.c 요청-응답 · isotp.c ISO-TP · busguard.c 버스 보호
-   policy.c 허용 서비스 · stats.c 지연·ID 표 · dtc.c 고장 코드 · out.c 출력
-                                       │ sct/port.h
-            ┌──────────────────────────┴──────────────┐
-   main/port_esp.c (ESP32-S3 TWAI)         port_sim/ (PC: 가상 버스 + 가상 ECU + 고장 주입)
+ canre (PC) or serial terminal ── lines ──┐
+                                          │
+ components/sct_core  (plain C11, no ESP-IDF, no heap)
+   cli.c commands · diag.c request/response · isotp.c ISO-TP · busguard.c bus protection
+   policy.c allowed services · stats.c latency/ID table · dtc.c trouble codes · out.c output
+                                          │ sct/port.h
+            ┌─────────────────────────────┴──────────────┐
+   main/port_esp.c (ESP32-S3 TWAI)          port_sim/ (PC: virtual bus + virtual ECU + fault injection)
 ```
 
-같은 핵심 코드를 PC에서 WebAssembly로 빌드해 가상 ECU를 상대로 시험한다. 가상 ECU는 사례 차량의 실측 응답(표준 회전수 없음, `21 xx` 값, 고장 코드 프레임)을 흉내 내고, 응답 끊김·순번 틀림·ACK 없음·응답 대기·버스 오류를 일부러 넣을 수 있다.
+The same core is built for the PC as WebAssembly and tested against a virtual ECU. The virtual ECU mimics the case-study vehicle's measured answers (no standard RPM, `21 xx` values, trouble-code frames) and can inject cut-off answers, wrong sequence numbers, missing ACKs, response-pending and bus errors on purpose.
 
-## PC에서 시험 (보드 없이)
+## Testing on the PC (no board)
 
-Python, Node.js, `pip install ziglang==0.13.0`(C 컴파일러로 `zig cc`를 쓴다).
+Python, Node.js and `pip install ziglang==0.13.0` (uses `zig cc` as the C compiler).
 
 ```bash
-python firmware/test/host_build.py                  # 단위 시험 + 골든 시험(88개)
-python firmware/test/host_build.py tests --update-golden   # 출력이 바뀌는 수정 뒤. 바뀐 내용을 사람이 보고 커밋
-node --no-warnings firmware/test/sim/run_sim.mjs    # 대화형 가상 펌웨어. sim help 로 고장 주입 명령
-pytest tests/test_firmware_link.py                  # canre ↔ 가상 펌웨어
+python firmware/test/host_build.py                         # unit + golden tests (88)
+python firmware/test/host_build.py tests --update-golden   # after a change that alters output; review the diff before committing
+node --no-warnings firmware/test/sim/run_sim.mjs           # interactive simulated firmware; 'sim help' for fault injection
+pytest tests/test_firmware_link.py                         # canre <-> simulated firmware
 ```

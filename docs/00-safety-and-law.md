@@ -1,44 +1,46 @@
-# 0. 안전과 법 — 먼저 읽기
+# 0. Safety and the law — read this first
 
-차량 버스는 브레이크·ABS·스로틀을 움직이는 장치들이 같이 쓰는 선이다. 이 저장소의 방법은 **읽기만** 한다. 그래도 아래를 지키지 않으면 차, 사람, 보증이 다칠 수 있다.
+[한국어](ko/00-safety-and-law.md)
 
-## 이 도구가 하지 않는 것 (코드로 막혀 있음)
+A vehicle bus is the wire that brakes, ABS and throttle share. The method in this repository **only reads**. Even so, ignore what follows and you can hurt the vehicle, people, or your warranty.
 
-`canre`는 읽기 서비스만 보낸다: `01 02 03 07 09 0A 19 1A 21 22`. 아래는 보낼 방법이 없다. 끄는 옵션도 일부러 만들지 않았다.
+## What this tool will not do (blocked in code)
 
-| 서비스 | 뜻 | 왜 막나 |
+`canre` sends only read services: `01 02 03 07 09 0A 19 1A 21 22`. There is no way to send the services below, and deliberately no switch to turn the block off.
+
+| Service | Meaning | Why it is blocked |
 |---|---|---|
-| `04`, `14` | 고장 코드 지우기 | 증거가 사라진다. 정비·검사 기록을 망친다 |
-| `10` | 세션 변경 | 프로그래밍·확장 세션으로 들어가는 입구 |
-| `11` | ECU 재시작 | 주행 중이면 엔진이 꺼진다 |
-| `27` | 보안 접근 | 이모빌라이저·쓰기 잠금을 여는 단계. 이 프로젝트 범위 밖 |
-| `2E` `3B` `3D` `34`~`37` | 쓰기, 메모리 쓰기, 내려받기 | ECU가 벽돌이 된다 |
-| `2F` `30` `31` `08` | 구동 시험, 루틴 | 팬·펌프·인젝터가 실제로 움직인다 |
-| `28` `85` | 통신·고장 기록 제어 | 다른 장치가 고장을 놓친다 |
+| `04`, `14` | Clear trouble codes | Destroys evidence; ruins service and inspection records |
+| `10` | Session control | The door into programming and extended sessions |
+| `11` | ECU reset | Stops the engine if the vehicle is moving |
+| `27` | Security access | The step that unlocks immobilisers and write protection. Out of scope |
+| `2E` `3B` `3D` `34`–`37` | Write, write memory, download | Bricks the ECU |
+| `2F` `30` `31` `08` | Actuator tests, routines | Fans, pumps and injectors actually move |
+| `28` `85` | Communication / DTC-setting control | Other modules miss faults |
 
-요청 ID도 OBD 주소(`7DF`, `7E0`~`7E7`)만 쓴다. 다른 주소가 확실할 때만 `--allow-tx-id`로 하나씩 연다.
+Request IDs are limited to the OBD addresses (`7DF`, `7E0`–`7E7`). Open another one with `--allow-tx-id` only when you are sure of it.
 
-## 읽기만 해도 생길 수 있는 일
+## What can happen even when you only read
 
-우리 차에서 실제로 있었던 일이다([사례](../case-studies/ktm-390-duke-2016.md)).
+This happened on our vehicle ([case study](../case-studies/ktm-390-duke-2016.md)).
 
-- **5분 동안 초당 50번 요청한 뒤 고장 코드가 하나 늘었다(P0108).** 요청 때문인지는 아직 가리지 못했다. 그래서 모든 측정 앞뒤로 고장 코드를 읽어 적는다(`canre dtc`).
-- 요청을 보내지 않던 사이에도 새 코드(P1505)가 생겼다. 코드가 생겼다고 바로 요청 탓으로 단정하지 말고, **요청 없이 같은 시간 돌린 기록**과 비교한다.
+- **After 5 minutes of 50 requests per second, one more trouble code appeared (P0108).** We have not yet established whether the requests caused it. So read and write down the trouble codes before and after every measurement (`canre dtc`).
+- A new code (P1505) also appeared while we were sending nothing. Do not blame a new code on your requests straight away; compare with **a run of the same length without requests**.
 
-## 지킬 것
+## Rules
 
-1. **처음에는 키 ON, 엔진 정지, 차는 받침대 위.** 엔진을 돌리는 단계는 엔진 정지에서 답한 번호만 읽는다.
-2. **주행 중에 처음 해 보는 요청을 보내지 않는다.** 주행 기록은 책상과 정지 상태에서 검증한 요청표로만.
-3. **결선 전에 테스터로 핀을 확인한다.** 진단 커넥터에는 상시 12 V가 같이 있다. 잘못 물리면 어댑터가 탄다.
-4. **요청을 보내는 장치는 버스에 하나만.** 두 장치가 동시에 물으면 응답이 섞인다.
-5. **개발보드는 차에 물린 채로 굽거나 리셋하지 않는다.** 그동안 송신 핀이 떠서 버스를 흔들 수 있다.
-6. 노트북은 배터리로 쓰거나 절연 어댑터를 쓴다. 접지는 한 점.
-7. 오토바이 배터리는 작다. 키 ON으로 오래 두면 방전된다. 충전기를 물리거나 시간을 짧게.
+1. **Start with key ON, engine OFF, vehicle on a stand.** When the engine runs, read only the identifiers that answered with the engine off.
+2. **Never send a request you have not tried before while riding or driving.** Road logs use only a request list validated on the bench and at standstill.
+3. **Check the pins with a multimeter before connecting.** The diagnostic connector also carries permanent 12 V. Wire it wrong and the adapter burns.
+4. **Only one device on the bus sends requests.** If two ask at once, answers get mixed up.
+5. **Never flash or reset a dev board while it is connected to the vehicle.** During that time the TX pin floats and can disturb the bus.
+6. Run the laptop on battery or use an isolated adapter. Ground at one point.
+7. Motorcycle batteries are small. Key ON for a long time drains them. Connect a charger or keep it short.
 
-## 법과 권리
+## Law and rights
 
-- **자기 차량, 또는 소유자가 허락한 차량에만 쓴다.**
-- 남의 차량에 몰래 붙이거나, 도난·이모빌라이저 우회, 배출가스 장치 무력화, 주행거리 조작에 쓰지 않는다. 이 저장소는 그런 질문에 답하지 않는다.
-- 제조사 정비서, 진단 소프트웨어, 펌웨어는 저작물이다. 이 저장소에 올리지 않는다. 직접 잰 값과 그 방법만 공유한다.
-- 차대번호(VIN)·번호판·위치가 들어간 원본 기록은 공유 전에 지운다. ECU는 `09 02`에 VIN을 답한다.
-- 개조가 보증·검사·보험에 주는 영향은 나라마다 다르다. 직접 확인한다.
+- **Use this only on vehicles you own, or with the owner's permission.**
+- Do not attach it secretly to someone else's vehicle, and do not use it for theft or immobiliser bypass, disabling emissions equipment, or odometer tampering. This repository does not answer those questions.
+- Service manuals, diagnostic software and firmware are copyrighted. Do not put them in this repository. Share only values you measured and how you measured them.
+- Remove VINs, number plates and locations from raw logs before sharing. ECUs answer `09 02` with the VIN.
+- How modification affects warranty, inspection and insurance differs by country. Check for yourself.

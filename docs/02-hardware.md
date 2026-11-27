@@ -1,48 +1,50 @@
-# 2. 장비와 배선
+# 2. Hardware and wiring
 
-## 어댑터 고르기
+[한국어](ko/02-hardware.md)
 
-| 장비 | 대략 값 | 듣기(상시 프레임) | 요청 | `canre` 설정 | 비고 |
+## Choosing an adapter
+
+| Device | Rough price | Listen (broadcast) | Request | `canre` setting | Notes |
 |---|---|---|---|---|---|
-| ELM327 (USB·블루투스) | 1~2만 원 | 사실상 못 함 | 됨 | `-i elm327 -c COM5` | 가장 흔하다. 어댑터가 응답 속도를 정해 버려 ECU 한계를 잴 수 없다. 우리는 초당 약 9번이 한계였다 |
-| CANable / slcan 계열 | 3~5만 원 | 됨 | 됨 | `-i slcan -c COM7` | 펌웨어에 따라 `-i gs_usb`(candleLight). 듣기 전용 모드 지원 |
-| PCAN-USB, Kvaser 등 | 수십만 원 | 됨 | 됨 | `-i pcan` / `-i kvaser` | 오류 카운터·타임스탬프가 정확 |
-| 라즈베리파이 + MCP2515/MCP2518 | 2~4만 원 | 됨 | 됨 | `-i socketcan -c can0` | 리눅스. `ip link`로 듣기 전용 설정 |
-| ESP32-S3 + CAN 트랜시버 | 1만 원 안팎 | 됨 | 됨 | `-i esp32 -c COM9` | 이 저장소의 [firmware/](../firmware/)를 올린다. ECU 자체의 응답 한계를 잴 수 있다. 우리는 SN65HVD230 모듈을 썼다 |
+| ELM327 (USB, Bluetooth) | $10–15 | Practically no | Yes | `-i elm327 -c COM5` | The most common. The adapter sets the answer rate, so you cannot measure the ECU's limit. Ours topped out at about 9 per second |
+| CANable / slcan family | $25–40 | Yes | Yes | `-i slcan -c COM7` | `-i gs_usb` with candleLight firmware. Supports listen-only |
+| PCAN-USB, Kvaser, … | $200+ | Yes | Yes | `-i pcan` / `-i kvaser` | Accurate error counters and timestamps |
+| Raspberry Pi + MCP2515/MCP2518 | $15–30 | Yes | Yes | `-i socketcan -c can0` | Linux. Set listen-only with `ip link` |
+| ESP32-S3 + CAN transceiver | about $10 | Yes | Yes | `-i esp32 -c COM9` | Flash [firmware/](../firmware/) from this repo. Can measure the ECU's own answer limit. We used an SN65HVD230 module |
 
-처음이면 **ELM327 하나 + CANable 하나**를 권한다. ELM327로 "답이 오는지"를 빨리 보고, CANable로 듣기와 속도 측정을 한다.
+If you are starting out, get **one ELM327 and one CANable**. The ELM327 tells you quickly whether anything answers; the CANable does listening and bitrate checks.
 
-어떤 python-can 인터페이스든 `-i <이름>`으로 쓸 수 있다. 목록: python-can 문서의 Interfaces.
+Any python-can interface works with `-i <name>`. See "Interfaces" in the python-can documentation.
 
-## 결선
+## Wiring
 
 ```
- 어댑터                차량 진단 커넥터
+ Adapter               Vehicle diagnostic connector
  CAN-H  ────────────── CAN-H
  CAN-L  ────────────── CAN-L
- GND    ────────────── 접지   (꼭 잇는다. 없으면 공통 전압이 떠서 오류가 난다)
-        (12 V는 어댑터가 필요할 때만. 대부분의 USB 어댑터는 필요 없다)
+ GND    ────────────── Ground  (always connect it; without it the common-mode voltage floats and you get errors)
+        (12 V only if the adapter needs it. Most USB adapters do not)
 ```
 
-- **H와 L은 꼬아서**(꼬임선) 짧게.
-- 처음 물리기 전에 테스터로 확인한다.
-  - 키 OFF: CAN-H ↔ CAN-L 저항. 약 60 Ω = 양 끝 종단 두 개(정상 버스). 약 120 Ω = 종단 하나. 끊김(kΩ 이상) = 종단 없음.
-  - 키 ON: H·L 각각 접지 대비 약 2.5 V(조용한 버스). 통신 중이면 H는 2.5~3.5 V, L은 1.5~2.5 V 사이를 오간다. 조용한 버스에서는 전압만으로 H·L을 가를 수 없다.
-- **종단저항**: 버스 양 끝에 120 Ω이 하나씩, 합쳐 60 Ω이 정상이다. 120 Ω만 보이면 우리 쪽에 120 Ω을 단다. 60 Ω이면 달지 않는다. 싼 트랜시버 모듈은 120 Ω이 기판에 붙어 있는 경우가 많으니 모듈만 따로 재 본다.
-- H·L을 뒤집어 물려도 고장 나지는 않는다. 답이 안 오면 바꿔 본다.
+- **Twist H and L** (twisted pair) and keep them short.
+- Check with a multimeter before the first connection.
+  - Key OFF: resistance CAN-H ↔ CAN-L. About 60 Ω = two terminators, one at each end (a normal bus). About 120 Ω = one terminator. Open (kΩ or more) = no terminator.
+  - Key ON: H and L each about 2.5 V to ground (quiet bus). While communicating, H moves between 2.5 and 3.5 V and L between 1.5 and 2.5 V. On a quiet bus you cannot tell H from L by voltage alone.
+- **Termination**: a correct bus has one 120 Ω at each end, 60 Ω combined. If you see only 120 Ω, add 120 Ω on your side. If you see 60 Ω, do not. Cheap transceiver modules often have 120 Ω on the board, so measure the module on its own.
+- Swapping H and L does no damage. If nothing answers, swap them.
 
-## 오토바이에서 주의
+## On motorcycles
 
-- 진단 커넥터가 시트 밑·배터리 옆에 있고, 대부분 OBD 16핀이 아니다. 제조사 전용 4·6핀이 흔하다. 3장 참고.
-- 커넥터를 구할 수 없으면 뒤쪽 끼움 핀(back-probe)이나 훅 클립으로 임시 결선한다. 선을 자르지 않는다.
-- 진동이 심하다. 주행 기록을 할 거면 커넥터를 묶고, 어댑터를 고정한다.
+- The diagnostic connector is under the seat or next to the battery, and is usually not a 16-pin OBD connector. Manufacturer-specific 4- and 6-pin connectors are common. See chapter 3.
+- If you cannot get the mating connector, use back-probe pins or hook clips temporarily. Do not cut wires.
+- Vibration is severe. For road logging, tie the connector down and fix the adapter in place.
 
-## 소프트웨어
+## Software
 
 ```bash
-pip install -e .          # 이 저장소 (python-can, numpy, pyyaml, pyserial이 같이 깔린다)
+pip install -e .          # this repository (pulls in python-can, numpy, pyyaml, pyserial)
 canre --help
-canre ping                # 기본은 가상 ECU(-i sim). 차 없이 전체 흐름을 연습할 수 있다
+canre ping                # default is the simulated ECU (-i sim): practise the whole flow without a vehicle
 ```
 
-보기 좋은 화면이 필요하면 SavvyCAN, Cangaroo(CANable) 같은 공개 도구를 같이 쓴다. `canre`의 CSV 기록은 표 계산 프로그램에서도 열린다.
+If you want a nicer screen, use public tools such as SavvyCAN or Cangaroo (CANable) alongside. `canre` CSV logs also open in any spreadsheet.

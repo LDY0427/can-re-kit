@@ -1,13 +1,15 @@
-# 4. 절차 — 처음부터 신호표까지
+# 4. Workflow — from nothing to a signal table
 
-각 단계에 "끝났다고 보는 기준"이 있다. 기준을 못 채우면 다음 단계로 가지 않는다. 모든 명령은 먼저 `-i sim`(기본값)으로 연습한다.
+[한국어](ko/04-workflow.md)
+
+Every step has a "done when". If you cannot meet it, do not move on. Practise every command first with `-i sim` (the default).
 
 ```
-0 책상 연습 → 1 결선 확인 → 2 듣기 → 3 첫 요청 → 4 표준 값 → 5 제조사 번호 훑기
-→ 6 값 기록 → 7 뜻 찾기 → 8 확인 시험 → 9 기록·공유
+0 desk practice → 1 wiring check → 2 listen → 3 first request → 4 standard values → 5 scan manufacturer IDs
+→ 6 record values → 7 find meaning → 8 confirming test → 9 document and share
 ```
 
-## 0. 책상 연습 (차 없이)
+## 0. Desk practice (no vehicle)
 
 ```bash
 canre ping
@@ -17,90 +19,90 @@ canre poll "21 21" "01 11" "21 3B" "01 05" "21 22" -n 400 --interval 50 --log lo
 canre analyze logs/practice.csv --reference "01 11"
 ```
 
-가상 ECU는 우리 차와 비슷하게 행동한다(표준 회전수 없음, 제조사 번호에 회전수). **기준:** 위 명령이 다 돌고, `analyze`가 `21 3B`를 스로틀로 찾는다.
+The simulated ECU behaves like ours (no standard RPM, RPM in a manufacturer identifier). **Done when:** all commands run and `analyze` finds `21 3B` as throttle.
 
-## 1. 결선 확인 (키 OFF → 키 ON)
+## 1. Wiring check (key OFF → key ON)
 
-2장의 저항·전압을 재서 적는다. **기준:** 종단 상태(60/120/끊김)와 H·L 전압을 기록했다.
+Measure and write down the resistance and voltages from chapter 2. **Done when:** termination state (60 / 120 / open) and H/L voltages are recorded.
 
-## 2. 듣기 (키 ON, 엔진 정지)
+## 2. Listen (key ON, engine off)
 
 ```bash
 canre bitrate -i slcan -c COM7
 canre listen  -i slcan -c COM7 -s 60
 ```
 
-- ID 표의 `bytes` 칸: `.` 변하지 않음, `*` 가끔 변함, `c` 매번 변함(카운터·체크섬 후보).
-- 프레임이 있으면 상시 프레임 해석이 가능하다. 7단계에서 `ID xxx`로 대조한다.
-- 엔진이 도는 상태에서도 한 번 더 듣는다(시동 후 나오는 프레임이 있을 수 있다).
-- **버스에 ECU 하나만 있으면** 듣기 전용 어댑터는 ACK를 주지 않는다. ECU가 무언가를 보내도 ACK가 없어 같은 프레임만 반복하거나 오류 상태로 간다. 이때는 `--ack`(일반 모드)로 한 번 더 듣는다.
+- The `bytes` column in the ID table: `.` never changes, `*` changes sometimes, `c` changes every frame (counter or checksum candidate).
+- If there are frames, broadcast decoding is possible. In step 7 you hold them against references as `ID xxx`.
+- Listen once more with the engine running (some frames appear only after start).
+- **If the ECU is alone on the bus**, a listen-only adapter gives no ACK. Even if the ECU sends something, without an ACK it repeats the same frame or goes into an error state. Listen once more with `--ack` (normal mode).
 
-**기준:** 속도, 상시 프레임 유무, ID 목록을 적었다.
+**Done when:** bitrate, whether broadcast exists, and the ID list are written down.
 
-## 3. 첫 요청
+## 3. First request
 
 ```bash
-canre dtc  -i slcan -c COM7          # 먼저 고장 코드를 적는다
-canre ping -i slcan -c COM7          # 01 00 한 번
+canre dtc  -i slcan -c COM7          # write down the trouble codes first
+canre ping -i slcan -c COM7          # 01 00, once
 ```
 
-**기준:** 응답 ID(보통 `7E8`)와 지연을 적었다. 고장 코드 목록을 사진·파일로 남겼다.
+**Done when:** the response ID (usually `7E8`) and latency are written down, and the trouble-code list is saved as a photo or file.
 
-## 4. 표준 값 읽기
+## 4. Read standard values
 
 ```bash
 canre pids -i slcan -c COM7
 ```
 
-지원 목록과 값을 적는다. 이 값들이 7단계의 "자"다. 오토바이는 표준 회전수(`01 0C`)가 없는 경우가 있다(우리 차가 그랬다).
+Write down the supported list and values. These are the "ruler" for step 7. Some motorcycles do not support standard RPM (`01 0C`); ours did not.
 
-**기준:** 지원 PID 목록, 각 값이 그럴듯한지(수온 ≈ 실제 온도, 스로틀 닫힘 ≈ 0 %).
+**Done when:** you have the supported PID list and each value is plausible (coolant ≈ real temperature, closed throttle ≈ 0 %).
 
-## 5. 제조사 번호 훑기 (키 ON, 엔진 정지에서만)
+## 5. Scan manufacturer identifiers (key ON, engine off only)
 
 ```bash
 canre scan -i slcan -c COM7 --engine-off --service 21 --start 00 --end FF
-canre scan -i slcan -c COM7 --engine-off --service 22 --start F180 --end F1A0   # UDS 차량: 범위를 좁혀서
+canre scan -i slcan -c COM7 --engine-off --service 22 --start F180 --end F1A0   # UDS vehicles: narrow the range
 ```
 
-- 훑기 전후와 16번마다 고장 코드를 다시 읽는다. 바뀌면 멈춘다.
-- 요청 사이 간격 기본 20 ms. 서두르지 않는다.
-- `22`는 번호가 65,536개다. 전부 훑지 말고, 알려진 범위(`F1xx` 식별 정보 등)부터 좁게.
-- 답한 번호와 길이를 적는다. 답의 길이는 값의 크기에 대한 첫 힌트다(1바이트 = 온도·플래그, 2바이트 = 회전수·압력, 4바이트 = 누적 계수기).
+- Trouble codes are read before and after the scan and every 16 identifiers. If they change, the scan stops.
+- Default gap between requests is 20 ms. Do not hurry.
+- Service `22` has 65,536 identifiers. Do not scan them all; start from known ranges (`F1xx` identification, etc.) and keep it narrow.
+- Write down which identifiers answered and how long each answer is. The length is the first hint about the value (1 byte = temperature or flag, 2 bytes = RPM or pressure, 4 bytes = cumulative counter).
 
-**기준:** 답한 번호 목록과 길이. 전후 고장 코드가 같다(다르면 그 사실을 적는다).
+**Done when:** you have the list of answering identifiers with lengths, and trouble codes before and after are the same (if not, write that down).
 
-## 6. 값 기록
+## 6. Record values
 
-엔진 정지에서 시작해, 정지 단계에서 답한 번호만 엔진을 돌린 상태에서 읽는다.
+Start with the engine off; with the engine running, read only identifiers that answered with the engine off.
 
 ```bash
 canre poll -i slcan -c COM7 "21 21" "21 22" "21 3B" "21 4A" "01 05" "01 0B" "01 11" \
      --interval 100 -n 1200 --record-all --log logs/idle_to_rev.csv
 ```
 
-- **아는 값(표준 PID)을 반드시 같이 넣는다.** 자가 없으면 뜻을 찾을 수 없다.
-- 하나씩 따로 움직인다. 엔진 정지에서 스로틀만 열고 닫기, 시동 후 회전수만 올리기, 식을 때와 데울 때. 여러 값이 한꺼번에 같이 움직이면 서로 가를 수 없다(5장 함정 1).
-- 무엇을 언제 했는지 메모한다("12초: 스로틀 전개, 20초: 닫음").
-- `--record-all`은 요청하는 동안 지나간 상시 프레임도 같은 기록에 넣는다.
-- 초당 몇 번 물을 수 있는지 재려면 간격을 100 → 50 → 20 → 10 ms로 줄이며 실패가 시작되는 곳을 찾는다. ELM327로 잰 값은 어댑터의 한계다. ECU의 한계로 적지 않는다.
+- **Always include known values (standard PIDs).** Without a ruler you cannot find meaning.
+- Move one thing at a time. Engine off, open and close only the throttle; after start, raise only the RPM; cold and warming up. If several values rise together you cannot separate them (chapter 5, trap 1).
+- Note what you did and when ("12 s: wide open, 20 s: closed").
+- `--record-all` also puts broadcast frames seen during polling into the same log.
+- To measure how many requests per second the ECU can take, shrink the interval 100 → 50 → 20 → 10 ms and find where failures start. A figure measured with an ELM327 is the adapter's limit; do not record it as the ECU's.
 
-**기준:** 각 동작이 기록에 들어갔고, 메모가 있다.
+**Done when:** every action is in the log and you have notes.
 
-## 7. 뜻 찾기
+## 7. Find meaning
 
 ```bash
-canre analyze logs/idle_to_rev.csv --reference "01 11"         # 스로틀과 같이 움직이는 바이트
-canre analyze logs/idle_to_rev.csv --reference "01 05"         # 수온
-canre analyze logs/idle_to_rev.csv --reference "21 21:u16be*0.25"   # 이미 찾은 값도 자가 된다
+canre analyze logs/idle_to_rev.csv --reference "01 11"              # bytes that follow throttle
+canre analyze logs/idle_to_rev.csv --reference "01 05"              # coolant
+canre analyze logs/idle_to_rev.csv --reference "21 21:u16be*0.25"   # a value you already found is also a ruler
 ```
 
-출력은 바이트 위치·형식·상관(r, ρ)·맞춘 식(`ref = slope × raw + offset`)이다. 우연 기준(`chance threshold`)을 넘어도 **후보**일 뿐이다. 자세한 읽는 법과 함정은 5장.
+The output is byte position, layout, correlation (r, ρ) and a fitted formula (`ref = slope × raw + offset`). Even above the chance threshold it is only a **candidate**. How to read it, and the traps: chapter 5.
 
-## 8. 확인 시험
+## 8. Confirming test
 
-후보 하나마다, 그 값만 움직이는 시험을 일부러 한다. 예: 회전수를 한 값에 20초 붙들고 누적 계수기 증가율과 비교, 냉간 시동부터 열간까지 수온 비교. 다른 계기(온도계, 압력계, 타코미터)와 대조하면 더 좋다. 통과하면 `measured`.
+For each candidate, deliberately run a test that moves only that value. Examples: hold RPM steady for 20 s and compare with a cumulative counter's rate; compare coolant from a cold start to hot. Comparing with an independent instrument (thermometer, pressure gauge, tachometer) is even better. If it passes, it is `measured`.
 
-## 9. 기록과 공유
+## 9. Document and share
 
-`profiles/<차종>.yaml`에 적는다(6장). 기록 원본은 VIN을 지우고 남긴다. 무엇을 아직 모르는지 `open_questions`에 적는다.
+Write it into `profiles/<vehicle>.yaml` (chapter 6). Keep raw logs with the VIN removed. Write what you still do not know under `open_questions`.

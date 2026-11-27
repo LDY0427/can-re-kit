@@ -6,7 +6,7 @@
 
 We needed engine RPM, throttle, coolant and MAP from a stock motorcycle ECU (KTM 390 Duke, 2016) for a student race car. Nothing was published for that ECU, and the bus was silent. This repository is the method we ended up with, turned into something you can reuse on your own vehicle:
 
-- **A step-by-step workflow** from "which wire is CAN-H?" to a documented signal table ([docs/](docs/), Korean).
+- **A step-by-step workflow** from "which wire is CAN-H?" to a documented signal table ([docs/](docs/); Korean in [docs/ko/](docs/ko/)).
 - **`canre`**, a small Python CLI that sniffs, queries, scans and correlates — and **can only read**. Write, clear-codes, security-access, routine and flash services are blocked in code, with no override.
 - **ESP32-S3 firmware** ([firmware/](firmware/)): a ~$10 direct-to-bus adapter that measures what the ECU itself can do, with the same read-only policy enforced on the device. Tested on the case-study vehicle (v2.0.0).
 - **A simulated motorcycle ECU** so you can practise every step at your desk.

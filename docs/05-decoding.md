@@ -1,51 +1,53 @@
-# 5. 뜻 찾기 — 아는 값에 대어 보기
+# 5. Finding meaning — hold it against something known
 
-## 방법
+[한국어](ko/05-decoding.md)
 
-`canre analyze`가 하는 일:
+## Method
 
-1. **시각 맞추기.** 요청은 하나씩 차례로 나가서 번호마다 읽은 때가 다르다. 기준 값을 후보 값의 시각으로 선형 보간한다. 둘 사이 간격이 `--max-gap`(기본 3초)보다 크면 그 표본은 뺀다.
-2. **바이트 창 만들기.** 답의 각 위치에서 1바이트(`u8`), 2바이트 큰 끝(`u16be`), 2바이트 작은 끝(`u16le`)을 꺼낸다.
-3. **상관.** 피어슨 r(직선 관계)과 스피어만 ρ(순서만 맞는 관계)를 같이 낸다. r은 낮은데 ρ가 높으면 비선형(표 변환, 서미스터)일 수 있다.
-4. **식 맞추기.** 최소제곱으로 `기준 = slope × raw + offset`.
-5. **우연 기준.** 비교한 창이 m개면, 아무 관계 없는 두 신호가 넘을 |r|을 본페로니 보정으로 낸다. 시계열은 이웃 표본끼리 닮아 실제 표본 수가 더 적으니, 넘어도 후보다.
+What `canre analyze` does:
 
-## 식을 사람이 읽을 수 있게 다듬기
+1. **Time alignment.** Requests go out one after another, so each identifier is read at a different moment. The reference is linearly interpolated to each candidate sample's time. Samples whose surrounding reference points are more than `--max-gap` (default 3 s) apart are dropped.
+2. **Byte windows.** At each position of the answer it extracts 1 byte (`u8`), 2 bytes big-endian (`u16be`) and 2 bytes little-endian (`u16le`).
+3. **Correlation.** Pearson r (straight-line relation) and Spearman ρ (order only). Low r with high ρ can mean a non-linear relation (lookup table, thermistor).
+4. **Fit.** Least squares: `reference = slope × raw + offset`.
+5. **Chance threshold.** With m windows compared, it reports the |r| two unrelated signals would exceed, with a Bonferroni correction. Neighbouring time-series samples resemble each other, so the effective sample count is smaller; even above the threshold it is only a candidate.
 
-맞춘 기울기는 보통 깔끔한 수 근처다. ECU는 2의 거듭제곱과 단순한 오프셋을 좋아한다.
+## Cleaning up formulas so a person can read them
 
-| 맞춘 식 | 다듬은 식 | 흔한 이유 |
+Fitted slopes usually sit near a tidy number. ECUs like powers of two and simple offsets.
+
+| Fitted | Cleaned | Common reason |
 |---|---|---|
-| 0.2499 × raw | raw / 4 | 회전수(0.25 rpm 단위) |
-| 0.003906 × raw | raw / 256 | 상위 바이트가 정수부 |
-| 0.749 × raw − 47.8 | 0.75 × raw − 48 | 온도(0.75 °C 단위, 오프셋) |
-| 1.0 × raw − 40 | raw − 40 | 표준 온도(J1979) |
-| 0.392 × raw | raw × 100/255 | 0~255를 0~100 %로 |
+| 0.2499 × raw | raw / 4 | RPM in 0.25 rpm units |
+| 0.003906 × raw | raw / 256 | high byte is the integer part |
+| 0.749 × raw − 47.8 | 0.75 × raw − 48 | temperature (0.75 °C units, offset) |
+| 1.0 × raw − 40 | raw − 40 | standard temperature (J1979) |
+| 0.392 × raw | raw × 100/255 | 0–255 mapped to 0–100 % |
 
-다듬은 식으로 다시 계산해 잔차가 커지지 않는지 본다.
+Recompute with the cleaned formula and check that the residual does not grow.
 
-## 함정
+## Traps
 
-1. **같이 움직이는 것은 다 같이 걸린다.** 회전수와 흡기압, 스로틀은 운전 중 함께 오른다. 하나만 움직이는 구간(엔진 정지에서 스로틀만, 회전수 고정)으로 가른다. 가상 ECU에서도 스로틀 기준으로 돌리면 흡기압이 r 0.85로 따라 나온다.
-2. **늘기만 하는 것끼리는 상관이 높다.** 엔진이 데워지는 동안 수온과 누적 계수기는 둘 다 오르기만 한다. 출력에 `[counter-like]`가 붙은 후보는 의심한다. 가상 ECU로 `--reference "01 05"`를 돌리면 누적 계수기 `21 64`가 r 0.98로 2등에 나온다.
-3. **엔디안과 바이트 경계.** 2바이트 값의 상위 바이트만 `u8`로 잡혀도 상관이 높게 나온다. 같은 번호에서 `u16be`와 `u8`이 둘 다 뜨면 2바이트 쪽이 진짜일 가능성이 높다(잔차를 비교).
-4. **다른 연식·다른 모델의 표를 그대로 쓰지 않는다.** 같은 브랜드라도 ECU 세대가 다르면 번호가 다르다. 공개된 ID 표는 `reported`로만 쓰고 내 차에서 다시 맞춘다.
-5. **남이 맞춘 식의 이상한 숫자.** 포럼의 "264.12로 나누면 맞더라" 같은 값은 실측 오차를 식에 넣은 경우가 많다. 물리적으로 말이 되는 식(256)과 둘 다 놓고 확인 시험으로 가른다.
-6. **센서가 ECU에 안 물려 있을 수 있다.** 값이 한 자리에 고정이면 배선부터 본다. 우리 차는 산소 센서를 ECU에서 떼어 애프터마켓 모듈에 물려 두어서 산소 센서 값이 0.46 V로 고정이었다.
-7. **ECU가 계산한 값과 실제 구동 값은 다르다.** ECU 뒤에 연료·점화 보정 모듈이 있으면 ECU가 답하는 분사·점화 값은 실제 인젝터·코일에 가는 값이 아니다. 센서 값(스로틀·흡기압·수온·회전수)은 영향이 없다.
-8. **ELM327의 초당 응답 수는 ECU의 한계가 아니다.** 버스에 직접 물린 어댑터로 다시 잰다.
+1. **Everything that moves together gets caught together.** RPM, MAP and throttle rise together while riding. Separate them using stretches where only one moves (engine off with throttle only, steady RPM). Even in the simulator, using throttle as the reference brings MAP up at r 0.85.
+2. **Things that only increase correlate with each other.** While the engine warms up, coolant and cumulative counters both only rise. Be suspicious of candidates marked `[counter-like]`. Run the simulator with `--reference "01 05"` and the counter `21 64` comes second at r 0.98.
+3. **Endianness and byte boundaries.** If only the high byte of a 2-byte value is caught as `u8`, correlation is still high. If both `u16be` and `u8` show up for the same identifier, the 2-byte one is probably right (compare residuals).
+4. **Do not reuse tables from another year or model.** Even within a brand, a different ECU generation uses different identifiers. Treat published ID tables as `reported` and refit them on your vehicle.
+5. **Strange numbers in someone else's formula.** A forum "divide by 264.12 and it matches" often has measurement error folded into the formula. Put the physically sensible formula (256) next to it and decide with a confirming test.
+6. **The sensor may not be connected to the ECU.** If a value is stuck, check the wiring first. On our vehicle the oxygen sensor had been moved from the ECU to an aftermarket module, so the ECU's O2 value was stuck at 0.46 V.
+7. **What the ECU computes is not what the actuators get.** If a fuel/ignition module sits after the ECU, the injection and ignition values the ECU reports are not what reaches the injector and coil. Sensor values (throttle, MAP, coolant, RPM) are unaffected.
+8. **An ELM327's answers per second are not the ECU's limit.** Measure again with an adapter connected directly to the bus.
 
-## 누적 계수기는 좋은 검산 도구다
+## Cumulative counters are a good cross-check
 
-4바이트로 엔진 정지에서 0이고 돌 때 오르기만 하는 값은 크랭크 회전 수 계수기일 수 있다. 분당 증가량 = 평균 회전수이므로, 회전수 후보의 배율을 독립적으로 검산할 수 있다. 우리는 이 방법으로 `21 21 ÷ 4`를 ±5 % 안에서 확인했다. 정확히 가르려면 회전수를 한 값에 20초 이상 붙들어 둔다.
+A 4-byte value that is 0 with the engine off and only rises while running may be a crankshaft revolution counter. Its increase per minute equals the mean RPM, so it independently checks an RPM candidate's scale. We confirmed `21 21 ÷ 4` to within ±5 % this way. To settle it exactly, hold RPM at one value for 20 s or more.
 
-## 상시 프레임 해석
+## Decoding broadcast frames
 
-`poll --record-all`로 상시 프레임과 표준 값을 같은 기록에 넣은 뒤 같은 방법을 쓴다.
+Use `poll --record-all` to put broadcast frames and standard values in the same log, then the same method:
 
 ```bash
-canre analyze logs/run.csv --reference "01 0C"          # 차가 표준 회전수를 지원하면
-canre analyze logs/run.csv --reference "ID 120:u16be"   # 이미 찾은 상시 값을 자로
+canre analyze logs/run.csv --reference "01 0C"          # if the vehicle supports standard RPM
+canre analyze logs/run.csv --reference "ID 120:u16be"   # a broadcast value already found, as the ruler
 ```
 
-상시 프레임 바이트는 카운터(`c`), 체크섬(마지막 바이트, 매번 변함), 비트 플래그(브레이크·클러치 스위치: 0/1)도 섞여 있다. 플래그는 스위치를 눌렀다 떼며 `listen` 표의 `last data`를 보는 편이 빠르다.
+Broadcast bytes also include counters (`c`), checksums (last byte, changes every frame) and bit flags (brake or clutch switch: 0/1). For flags, pressing and releasing the switch while watching `last data` in the `listen` table is faster.

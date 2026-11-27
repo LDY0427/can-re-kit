@@ -1,51 +1,53 @@
-# 6. 기록하고 나누기 — 차종 프로필
+# 6. Documenting and sharing — vehicle profiles
 
-## 확인 수준을 섞지 않는다
+[한국어](ko/06-documenting.md)
 
-신호표가 쓸모 있으려면 읽는 사람이 "이건 잰 것, 이건 짐작"을 가를 수 있어야 한다. 모든 값에 `confidence`를 단다.
+## Never mix confidence levels
 
-| 수준 | 뜻 | `evidence`에 쓸 것 |
+A signal table is only useful if a reader can tell "measured" from "guessed". Every value gets a `confidence`.
+
+| Level | Meaning | What goes in `evidence` |
 |---|---|---|
-| `measured` | 내 차에서, 독립된 기준과 대조해 확인 | 무엇과 비교했나, 표본 수, 상관·잔차, 범위 |
-| `inferred` | 내 기록의 패턴. 일부러 한 확인 시험은 아직 | 어떤 기록에서 어떤 패턴 |
-| `reported` | 남의 주장(포럼, 글, 다른 모델) | 출처 종류와 몇 곳이 일치하는지 |
-| `standard` | 공개 표준 식(SAE J1979 등) | 비워도 됨 |
+| `measured` | Checked on your vehicle against an independent reference | What it was compared with, sample count, correlation/residual, range |
+| `inferred` | A pattern in your logs; no deliberate confirming test yet | Which log, which pattern |
+| `reported` | Someone else's claim (forum, article, another model) | Kind of source, how many agree |
+| `standard` | Public standard formula (SAE J1979 etc.) | May be empty |
 
-`canre profile check`는 `measured` `inferred` `reported`에 근거가 비어 있으면 거부한다.
+`canre profile check` rejects `measured`, `inferred` and `reported` entries with empty evidence.
 
-## 프로필 파일
+## Profile files
 
-`profiles/_template.yaml`을 복사해 `profiles/<브랜드>-<모델>-<연식>.yaml`로 만든다. 예: [ktm-390-duke-2016.yaml](../profiles/ktm-390-duke-2016.yaml).
+Copy `profiles/_template.yaml` to `profiles/<make>-<model>-<year>.yaml`. Example: [ktm-390-duke-2016.yaml](../profiles/ktm-390-duke-2016.yaml).
 
 ```yaml
 diag_signals:
   - name: coolant_temp
-    request: "21 22"     # 길이 바이트 없이
-    byte: 0              # 값 안의 시작 위치(서비스·번호 되돌림 뒤)
+    request: "21 22"     # without the length byte
+    byte: 0              # start within the value (after the echoed service/identifier)
     length: 1
     endian: big
-    scale: 0.75          # 물리값 = raw × scale + offset
+    scale: 0.75          # physical = raw × scale + offset
     offset: -48
     unit: C
     confidence: measured
-    evidence: "표준 01 05와 29 C, 43~51 C에서 일치(r 0.99). 고온 구간은 아직"
+    evidence: "matches standard 01 05 at 29 C and 43-51 C (r 0.99). Hot range not yet covered"
 ```
 
-모르는 것은 추측해서 채우지 말고 `open_questions`에 적는다.
+Do not guess to fill gaps; put unknowns under `open_questions`.
 
 ```bash
 canre profile check profiles/my-bike.yaml
-canre profile table profiles/my-bike.yaml      # 마크다운 표
-canre profile dbc   profiles/my-bike.yaml      # 상시 프레임 신호를 DBC로
-canre poll "21 21" "21 22" --profile profiles/my-bike.yaml   # 물리값으로 보기
+canre profile table profiles/my-bike.yaml      # Markdown table
+canre profile dbc   profiles/my-bike.yaml      # broadcast signals as DBC
+canre poll "21 21" "21 22" --profile profiles/my-bike.yaml   # see physical values
 ```
 
-## 원본 기록
+## Raw logs
 
-- 원본 CSV는 고치지 않고 두고, 해석은 따로 한다. 해석은 다시 할 수 있지만 측정은 다시 할 수 없다.
-- 공유 전에 VIN(`09 02` 응답), 위치, 이름을 지운다.
-- 기록마다 날짜, 차 상태(키 ON/엔진, 수온), 한 동작, 어댑터를 적는다.
+- Keep raw CSVs untouched and analyse separately. Analysis can be redone; the measurement cannot.
+- Remove the VIN (`09 02` answer), locations and names before sharing.
+- For every log, note the date, vehicle state (key ON / engine, coolant temperature), the action and the adapter.
 
-## 기여
+## Contributing
 
-새 차종 프로필, 다른 어댑터에서 돌려 본 결과, 틀린 곳 지적 모두 환영한다. [CONTRIBUTING.md](../CONTRIBUTING.md).
+New vehicle profiles, results from other adapters and corrections are all welcome. See [CONTRIBUTING.md](../CONTRIBUTING.md).

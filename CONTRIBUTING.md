@@ -18,5 +18,5 @@
 
 ## Docs / 문서
 
-Docs are in Korean. English translations are welcome as `docs/en/<same name>.md`.
-문서는 한국어가 원본이다. 영어 번역은 `docs/en/`에 같은 이름으로.
+English is the primary language (`docs/`, `case-studies/`, `firmware/README.md`). Korean versions live next to them (`docs/ko/`, `case-studies/ko/`, `firmware/README.ko.md`). When you change one, update the other or say in the PR that it still needs updating.
+기본 문서는 영어다. 한국어판은 `docs/ko/`, `case-studies/ko/`, `firmware/README.ko.md`에 있다. 한쪽을 고치면 다른 쪽도 고치거나, 아직 못 고쳤다고 PR에 적는다.

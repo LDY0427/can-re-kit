@@ -1,44 +1,46 @@
-# 7. 오토바이와 다른 차량에 쓰기
+# 7. Motorcycles and other vehicles
 
-방법(듣기 → 묻기 → 대어 보기 → 확인 → 기록)은 차종과 무관하다. 달라지는 것은 버스의 모양이다.
+[한국어](ko/07-other-vehicles.md)
 
-## 오토바이 체크리스트
+The method (listen → ask → hold against a reference → confirm → document) does not depend on the vehicle. What changes is the shape of the bus.
 
-- [ ] 진단 커넥터 위치와 핀 배치를 **두 곳 이상**에서 찾았다. 테스터로 확인했다.
-- [ ] CAN인지 K-line인지 갈랐다(3장 표). K-line이면 이 도구의 CAN 기능은 못 쓴다.
-- [ ] 버스에 붙은 장치를 적었다(ECU, ABS, 계기판, 스마트키, 퀵시프터, 트랙션 컨트롤 모듈).
-- [ ] 계기판·ABS가 CAN에 있으면: 먼저 **듣기**. 휠 속도·기어·회전수가 상시 프레임에 있을 가능성이 높다.
-- [ ] ECU 단독이면: 상시 프레임이 없을 수 있다. 듣기 전용 어댑터만으로는 ACK가 없어 이상하게 보일 수 있다(`listen --ack`).
-- [ ] 표준 회전수(`01 0C`)가 없다고 놀라지 않는다. 제조사 번호(`21 xx`, `22 xxxx`)에 있을 수 있다.
-- [ ] 배터리가 작다. 키 ON 시간을 짧게, 또는 충전기.
-- [ ] 받침대에 세우고 뒷바퀴가 뜬 상태에서만 기어를 넣는다.
+## Motorcycle checklist
 
-## 오토바이에서 잘 나오는 값과 확인 시험
+- [ ] Found the diagnostic connector location and pinout in **at least two** sources, and checked it with a meter.
+- [ ] Determined CAN or K-line (table in chapter 3). With K-line, this tool's CAN features do not apply.
+- [ ] Listed the devices on the bus (ECU, ABS, dash, smart key, quickshifter, traction-control module).
+- [ ] If the dash or ABS is on CAN: **listen** first. Wheel speed, gear and RPM are likely in broadcast frames.
+- [ ] If the ECU is alone: there may be no broadcast frames. With a listen-only adapter there is no ACK and things can look odd (`listen --ack`).
+- [ ] Do not be surprised if there is no standard RPM (`01 0C`). It may be in manufacturer identifiers (`21 xx`, `22 xxxx`).
+- [ ] The battery is small. Keep key-ON time short, or connect a charger.
+- [ ] Select a gear only with the bike on a stand and the rear wheel off the ground.
 
-| 값 | 확인 시험 | 자(기준) |
+## Values that commonly turn up, and how to confirm them
+
+| Value | Confirming test | Reference |
 |---|---|---|
-| 회전수 | 회전수를 한 값에 20초 붙들기 | 누적 계수기 증가율, 광학 타코미터 |
-| 스로틀 | 엔진 정지에서 천천히 열고 닫기 | 표준 `01 11`, 닫힘·전개 끝값 |
-| 수온 | 냉간 시동부터 팬이 돌 때까지 | 표준 `01 05`, 온도계 |
-| 기어 | 엔진 정지, 뒷바퀴를 손으로 돌리며 기어 바꾸기 | 1~6 + 중립의 정수 값 |
-| 휠 속도 | 받침대 위 뒷바퀴 회전 | GPS(주행), 바퀴 회전수 × 둘레 |
-| 사이드 스탠드·클러치·브레이크 | 눌렀다 떼기 | 0/1 비트 |
-| 배터리 전압 | 시동 전후 | 테스터 |
+| RPM | Hold RPM steady for 20 s | Cumulative counter rate, optical tachometer |
+| Throttle | Engine off, open and close slowly | Standard `01 11`, closed and wide-open end values |
+| Coolant | Cold start until the fan runs | Standard `01 05`, thermometer |
+| Gear | Engine off, turn the rear wheel by hand while changing gear | Integer values 1–6 plus neutral |
+| Wheel speed | Rear wheel turning on a stand | GPS (riding), wheel revolutions × circumference |
+| Side stand, clutch, brake | Press and release | 0/1 bits |
+| Battery voltage | Before and after start | Multimeter |
 
-## 다른 차량
+## Other vehicles
 
-| 차량 | 다른 점 | 이 도구로 |
+| Vehicle | What differs | With this tool |
 |---|---|---|
-| 승용차 | OBD 16핀. 진단 포트 뒤 게이트웨이가 상시 프레임을 막는 경우가 많다 | 요청·응답은 그대로. 상시 프레임은 게이트웨이 안쪽 버스에서 |
-| 스쿠터·ATV | 오토바이와 비슷. 진단이 아예 없는 차도 있다 | 버스가 있으면 같은 절차 |
-| 전기 자전거·킥보드·EV 배터리팩 | BMS·모터 컨트롤러가 상시 프레임을 많이 보낸다. 250/500 kbps, 29비트 ID도 흔하다 | `listen`, `poll --record-all`, `analyze --reference "ID ..."`. 요청은 표준이 아니어서 보통 안 쓴다 |
-| 트럭·농기계(J1939) | 250 kbps, 29비트, 공개 표준 PGN이 많다 | `listen`으로 ID 표는 보인다. J1939 해석은 범위 밖(전용 도구 권장) |
-| 직접 만든 차량(포뮬러 등) | 순정 ECU 단독 + 자작 노드 | 순정 쪽은 이 절차, 자작 쪽은 처음부터 DBC로 설계 |
+| Car | 16-pin OBD. A gateway behind the port often hides broadcast frames | Request/response as is. Broadcast on the bus behind the gateway |
+| Scooter, ATV | Similar to motorcycles. Some have no diagnostics at all | Same procedure if there is a bus |
+| E-bike, e-scooter, EV battery pack | BMS and motor controllers broadcast a lot. 250/500 kbps; 29-bit IDs are common | `listen`, `poll --record-all`, `analyze --reference "ID ..."`. Requests are non-standard and usually not used |
+| Truck, agricultural (J1939) | 250 kbps, 29-bit, many public standard PGNs | `listen` shows the ID table. J1939 decoding is out of scope (use a dedicated tool) |
+| Home-built vehicle (Formula Student etc.) | Stock ECU alone + home-built nodes | This procedure for the stock side; design the home-built side as a DBC from the start |
 
-## 장치를 차에 달 때
+## When you install a device on the vehicle
 
-해석이 끝나 상시로 값을 읽는 장치(로거, 계기판, 시프트 램프)를 만든다면:
+If decoding is done and you build a device that reads values continuously (logger, dash, shift light):
 
-- 요청을 보내는 장치는 버스에 **하나만**. 로거·계기판은 그 장치의 요청에 대한 응답을 듣기만 한다.
-- 초당 몇 번 물을지는 4장 6단계에서 잰 ECU 한계로 나눈다. 회전수처럼 빨라야 하는 값에 몫을 많이 준다.
-- 버스 부하를 계산한다: 11비트 8바이트 프레임은 비트 채움 최악으로 약 135비트. 500 kbps에서 요청+응답 한 쌍은 약 0.54 ms.
+- **Only one** device on the bus sends requests. Loggers and dashes only listen to the answers to that device's requests.
+- Divide how often you ask by the ECU limit measured in chapter 4, step 6. Give a bigger share to values that must be fast, such as RPM.
+- Work out the bus load: an 11-bit, 8-byte frame is about 135 bits with worst-case bit stuffing. At 500 kbps a request + answer pair takes about 0.54 ms.
