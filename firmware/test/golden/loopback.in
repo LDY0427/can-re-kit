@@ -1,0 +1,10 @@
+loopback
+loopback bench
+sim stream 280 10 ack
+loopback bench
+sim stream off
+sim buserr 3
+loopback bench
+sim buserr 0
+sim talk off
+loopback bench

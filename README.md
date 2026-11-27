@@ -8,6 +8,7 @@ We needed engine RPM, throttle, coolant and MAP from a stock motorcycle ECU (KTM
 
 - **A step-by-step workflow** from "which wire is CAN-H?" to a documented signal table ([docs/](docs/), Korean).
 - **`canre`**, a small Python CLI that sniffs, queries, scans and correlates — and **can only read**. Write, clear-codes, security-access, routine and flash services are blocked in code, with no override.
+- **ESP32-S3 firmware** ([firmware/](firmware/)): a ~$10 direct-to-bus adapter that measures what the ECU itself can do, with the same read-only policy enforced on the device. Tested on the case-study vehicle (v2.0.0).
 - **A simulated motorcycle ECU** so you can practise every step at your desk.
 - **Vehicle profiles** in YAML where every signal carries a confidence level (`measured` / `inferred` / `reported` / `standard`) and its evidence.
 - **A full case study** of the KTM 390 Duke ECU, including what went wrong.
@@ -24,7 +25,7 @@ canre poll "21 3B" "01 11" "21 22" "01 05" -n 400 --interval 50 --log logs/demo.
 canre analyze logs/demo.csv --reference "01 11"     # which unknown bytes follow throttle?
 ```
 
-On a vehicle, add an interface: `-i slcan -c COM7` (CANable), `-i gs_usb`, `-i pcan`, `-i socketcan -c can0`, or `-i elm327 -c COM5`. Any [python-can](https://python-can.readthedocs.io/) interface works.
+On a vehicle, add an interface: `-i slcan -c COM7` (CANable), `-i gs_usb`, `-i pcan`, `-i socketcan -c can0`, `-i elm327 -c COM5`, or `-i esp32 -c COM9` (the firmware in this repo). Any [python-can](https://python-can.readthedocs.io/) interface works.
 
 ## Commands
 
@@ -56,6 +57,7 @@ On a vehicle, add an interface: `-i slcan -c COM7` (CANable), `-i gs_usb`, `-i p
 | [docs/06-documenting.md](docs/06-documenting.md) | profiles and confidence levels |
 | [docs/07-other-vehicles.md](docs/07-other-vehicles.md) | motorcycles, EVs, cars, trucks |
 | [case-studies/ktm-390-duke-2016.md](case-studies/ktm-390-duke-2016.md) | the worked example |
+| [firmware/](firmware/) | ESP32-S3 adapter firmware, its simulator and tests |
 | [profiles/](profiles/) | per-vehicle signal tables — contributions welcome |
 
 ## Limitations
@@ -66,4 +68,4 @@ On a vehicle, add an interface: `-i slcan -c COM7` (CANable), `-i gs_usb`, `-i p
 
 ## License
 
-Code: MIT. Documentation and profiles: CC BY 4.0. See [LICENSE](LICENSE).
+Code (including firmware/): MIT. Documentation and profiles: CC BY 4.0. See [LICENSE](LICENSE).

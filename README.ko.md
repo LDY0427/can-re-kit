@@ -6,6 +6,7 @@
 
 - **절차서**: "어느 선이 CAN-H인가"부터 "신호표 완성"까지, 단계마다 끝났다고 보는 기준과 함께 ([docs/](docs/)).
 - **`canre`**: 듣기·묻기·훑기·대어 보기를 하는 파이썬 명령줄 도구. **읽기만 한다.** 쓰기·고장 코드 지우기·보안 접근·루틴·플래시는 코드에서 막혀 있고 끄는 옵션이 없다.
+- **ESP32-S3 펌웨어**([firmware/](firmware/)): 1만 원 안팎으로 버스에 직접 무는 어댑터. ECU 자체의 응답 한계를 잰다. 장치 쪽에서도 같은 읽기 전용 규칙을 지킨다. 사례 차량에서 썼다(v2.0.0).
 - **가상 오토바이 ECU**: 차 없이 책상에서 모든 단계를 연습한다.
 - **차종 프로필**(YAML): 신호마다 확인 수준(`measured` 실측 / `inferred` 추정 / `reported` 남의 보고 / `standard` 표준)과 근거를 단다.
 - **사례**: KTM 390 Duke ECU 해석 전 과정. 틀렸던 것까지.
@@ -22,7 +23,7 @@ canre poll "21 3B" "01 11" "21 22" "01 05" -n 400 --interval 50 --log logs/demo.
 canre analyze logs/demo.csv --reference "01 11"     # 스로틀과 같이 움직이는 바이트는?
 ```
 
-실차에서는 어댑터를 붙인다: `-i slcan -c COM7`(CANable), `-i gs_usb`, `-i pcan`, `-i socketcan -c can0`, `-i elm327 -c COM5`. python-can이 지원하는 인터페이스면 다 된다.
+실차에서는 어댑터를 붙인다: `-i slcan -c COM7`(CANable), `-i gs_usb`, `-i pcan`, `-i socketcan -c can0`, `-i elm327 -c COM5`, `-i esp32 -c COM9`(이 저장소의 펌웨어). python-can이 지원하는 인터페이스면 다 된다.
 
 ## 읽는 순서
 
@@ -35,6 +36,7 @@ canre analyze logs/demo.csv --reference "01 11"     # 스로틀과 같이 움직
 7. [6. 기록하고 나누기](docs/06-documenting.md)
 8. [7. 오토바이와 다른 차량](docs/07-other-vehicles.md)
 9. [사례: KTM 390 Duke 2016](case-studies/ktm-390-duke-2016.md)
+10. [ESP32-S3 펌웨어](firmware/README.md)
 
 ## 한계
 
@@ -48,4 +50,4 @@ canre analyze logs/demo.csv --reference "01 11"     # 스로틀과 같이 움직
 
 ## 라이선스
 
-코드 MIT, 문서·프로필 CC BY 4.0. [LICENSE](LICENSE)
+코드(펌웨어 포함) MIT, 문서·프로필 CC BY 4.0. [LICENSE](LICENSE)

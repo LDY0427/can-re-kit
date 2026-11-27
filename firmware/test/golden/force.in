@@ -1,0 +1,8 @@
+sim buserr 5
+req 21 21
+req 21 21 force
+watch 500 2 force
+speed 250
+sim kbps 250
+req 21 21 force
+speed 500

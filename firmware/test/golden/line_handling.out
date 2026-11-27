@@ -1,0 +1,21 @@
+HELLO,stock-can-tool,2.0.1,sim,2,sim
+# stock-can-tool v2.0.1 가상 펌웨어(가상 버스 + 가상 ECU). 실제 차와 무관하다. help 로 명령 보기
+> 
+REQ,1000.000,7DF,2,21 21,500kbps
+ANS,1308.540,7E8,8.54 ms,61 21 00 00
+# done
+> 
+REQ,1338.540,7DF,2,21 01,500kbps
+# 응답 없음(ACK는 받음): 속도와 결선은 맞다. 이 요청을 모르거나 주소가 다르다
+ERR,1,no_response
+# done
+> 
+> 
+REQ,2168.810,7DF,2,21 21,500kbps
+ANS,2477.350,7E8,8.54 ms,61 21 00 00
+# done
+> 
+REQ,2507.350,7DF,2,21 21,500kbps
+ANS,2815.890,7E8,8.54 ms,61 21 00 00
+# done
+> 

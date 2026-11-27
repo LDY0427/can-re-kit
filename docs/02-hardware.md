@@ -8,7 +8,7 @@
 | CANable / slcan 계열 | 3~5만 원 | 됨 | 됨 | `-i slcan -c COM7` | 펌웨어에 따라 `-i gs_usb`(candleLight). 듣기 전용 모드 지원 |
 | PCAN-USB, Kvaser 등 | 수십만 원 | 됨 | 됨 | `-i pcan` / `-i kvaser` | 오류 카운터·타임스탬프가 정확 |
 | 라즈베리파이 + MCP2515/MCP2518 | 2~4만 원 | 됨 | 됨 | `-i socketcan -c can0` | 리눅스. `ip link`로 듣기 전용 설정 |
-| ESP32 + CAN 트랜시버 | 1만 원 안팎 | 됨 | 됨 | 직접 펌웨어 | 차에 상시로 달 장치를 만들 때. 우리는 ESP32-S3 + SN65HVD230 모듈을 썼다 |
+| ESP32-S3 + CAN 트랜시버 | 1만 원 안팎 | 됨 | 됨 | `-i esp32 -c COM9` | 이 저장소의 [firmware/](../firmware/)를 올린다. ECU 자체의 응답 한계를 잴 수 있다. 우리는 SN65HVD230 모듈을 썼다 |
 
 처음이면 **ELM327 하나 + CANable 하나**를 권한다. ELM327로 "답이 오는지"를 빨리 보고, CANable로 듣기와 속도 측정을 한다.
 

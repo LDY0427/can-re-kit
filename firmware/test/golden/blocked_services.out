@@ -1,0 +1,59 @@
+HELLO,stock-can-tool,2.0.1,sim,2,sim
+# stock-can-tool v2.0.1 가상 펌웨어(가상 버스 + 가상 ECU). 실제 차와 무관하다. help 로 명령 보기
+> 
+# 막은 요청: 서비스 14(고장 코드 지우기)는 보내지 않는다. 읽기 서비스(01 02 03 07 09 0A 1A 21 22)만 보낸다
+ERR,4,blocked_service
+# done
+> 
+# 막은 요청: 서비스 04(고장 코드 지우기)는 보내지 않는다. 읽기 서비스(01 02 03 07 09 0A 1A 21 22)만 보낸다
+ERR,4,blocked_service
+# done
+> 
+# 막은 요청: 서비스 10(진단 세션 바꾸기)는 보내지 않는다. 읽기 서비스(01 02 03 07 09 0A 1A 21 22)만 보낸다
+ERR,4,blocked_service
+# done
+> 
+# 막은 요청: 서비스 11(ECU 재시작)는 보내지 않는다. 읽기 서비스(01 02 03 07 09 0A 1A 21 22)만 보낸다
+ERR,4,blocked_service
+# done
+> 
+# 막은 요청: 서비스 27(보안 접근)는 보내지 않는다. 읽기 서비스(01 02 03 07 09 0A 1A 21 22)만 보낸다
+ERR,4,blocked_service
+# done
+> 
+# 막은 요청: 서비스 2E(번호로 쓰기)는 보내지 않는다. 읽기 서비스(01 02 03 07 09 0A 1A 21 22)만 보낸다
+ERR,4,blocked_service
+# done
+> 
+# 막은 요청: 서비스 2F(입출력 제어)는 보내지 않는다. 읽기 서비스(01 02 03 07 09 0A 1A 21 22)만 보낸다
+ERR,4,blocked_service
+# done
+> 
+# 막은 요청: 서비스 31(루틴 실행)는 보내지 않는다. 읽기 서비스(01 02 03 07 09 0A 1A 21 22)만 보낸다
+ERR,4,blocked_service
+# done
+> 
+# 막은 요청: 서비스 34(내려받기 요청)는 보내지 않는다. 읽기 서비스(01 02 03 07 09 0A 1A 21 22)만 보낸다
+ERR,4,blocked_service
+# done
+> 
+# 막은 요청: 서비스 3B(로컬 번호로 쓰기(KWP))는 보내지 않는다. 읽기 서비스(01 02 03 07 09 0A 1A 21 22)만 보낸다
+ERR,4,blocked_service
+# done
+> 
+# 막은 요청: 서비스 85(고장 코드 기록 설정)는 보내지 않는다. 읽기 서비스(01 02 03 07 09 0A 1A 21 22)만 보낸다
+ERR,4,blocked_service
+# done
+> 
+# 막은 요청: 서비스 F0(이름 없는 서비스)는 보내지 않는다. 읽기 서비스(01 02 03 07 09 0A 1A 21 22)만 보낸다
+ERR,4,blocked_service
+# done
+> 
+# 막은 요청: 서비스 14(고장 코드 지우기)는 보내지 않는다. 읽기 서비스(01 02 03 07 09 0A 1A 21 22)만 보낸다
+ERR,4,blocked_service
+# done
+> 
+SIM,bus,t_ms=1000.000,tool_tx=0,buserr=0,tec=0,rec=0,talk=1
+SIM,ecu,kbps=500,noack=0,rpm=0,delay_ms=8.0,pending=0,added_dtc=0,requests=0,violations=0
+# done
+> 

@@ -1,0 +1,14 @@
+req 14
+req 04
+req 10 03
+req 11 01
+req 27 01
+req 2E F1 90 00
+req 2F 01 00 03
+req 31 01 FF 00
+req 34 00
+req 3B 90 00
+req 85 02
+req F0
+poll 50 5 21 21 / 14
+sim status

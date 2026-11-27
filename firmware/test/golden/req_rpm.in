@@ -1,0 +1,18 @@
+rpmsrc
+rpm
+rpmsrc 2E 01
+rpmsrc 21 21 div 0
+rpmsrc none
+rpm
+rpmsrc 21 21
+req 21 21
+rpm
+sim rpm 2175
+req 21 21
+req 21 64
+req 01 05
+target 7E0
+req 21 99
+target 7DF
+req 21 99
+req 01 0C

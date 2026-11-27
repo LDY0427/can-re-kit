@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from typing import Iterator, Optional
 
 from . import isotp
-from .safety import STANDARD_RX_IDS, check_request, check_tx_id
+from .safety import STANDARD_RX_IDS, STANDARD_TX_IDS, Refused, check_request, check_tx_id
 
 NRC_NAMES = {
     0x10: "general reject", 0x11: "service not supported", 0x12: "sub-function/ID not supported",
@@ -187,6 +187,93 @@ class CanTransport(Transport):
 
     def close(self) -> None:
         self.bus.shutdown()
+
+
+class SctTransport(Transport):
+    """The ESP32-S3 firmware in firmware/ (stock-can-tool v2), over its serial console.
+
+    The firmware enforces the same read-only policy on its side, so a request is
+    checked twice. Latency is the firmware's own measurement on the bus, not the
+    serial round trip.
+    """
+
+    name = "esp32"
+
+    def __init__(self, port: str, baud: int = 921600, bitrate_kbps: int = 500, tx_id: int = 0x7DF,
+                 allowed_tx: frozenset[int] = frozenset(), ser=None, force: bool = False):
+        check_tx_id(tx_id, allowed_tx)
+        if tx_id not in STANDARD_TX_IDS:
+            raise ValueError("the firmware only sends to 7DF or 7E0-7E7")
+        if ser is None:
+            import serial
+
+            ser = serial.Serial(port, baud, timeout=0.2)
+        self.ser = ser
+        self.force = force
+        self.kbps = bitrate_kbps
+        self.hello = ""
+        for line in self._cmd("hello"):
+            if line.startswith("HELLO,"):
+                self.hello = line
+        if not self.hello:
+            raise RuntimeError("no HELLO from the firmware: wrong port or baud?")
+        self._cmd(f"speed {bitrate_kbps}")
+        self._cmd(f"target {tx_id:03X}")
+        self._cmd("print off")
+
+    def _cmd(self, line: str, wait: float = 5.0) -> list[str]:
+        self.ser.write((line + "\n").encode())
+        out, end = [], time.monotonic() + wait
+        while time.monotonic() < end:
+            raw = self.ser.readline()
+            if not raw:
+                continue
+            text = raw.decode("utf-8", errors="replace").strip().lstrip("> ").strip()
+            if text == "# done":
+                return out
+            if text:
+                out.append(text)
+        raise TimeoutError(f"firmware did not finish '{line}'")
+
+    def request(self, req: bytes, timeout: float = 0.2) -> Response:
+        check_request(req)
+        lines = self._cmd("req " + req.hex(" ").upper() + (" force" if self.force else ""))
+        for ln in lines:
+            if ln.startswith("ANS,"):
+                _, _t, rid, lat, data = ln.split(",", 4)
+                payload = bytes.fromhex(data)
+                if not _matches(req, payload):
+                    continue
+                ms = float(lat.split()[0])
+                if payload[0] == 0x7F:
+                    return Response(req, "nrc", int(rid, 16), payload, ms, payload[2] if len(payload) > 2 else 0)
+                return Response(req, "ok", int(rid, 16), payload, ms)
+            if ln.startswith("PARTIAL,"):
+                return Response(req, "partial")
+            if ln.startswith("ERR,"):
+                key = ln.split(",")[2] if ln.count(",") >= 2 else ""
+                if key == "blocked_service":
+                    raise Refused("firmware refused the request")
+                if key not in ("no_response",):
+                    raise RuntimeError(f"firmware error: {ln}")
+        return Response(req, "timeout")
+
+    def listen(self, seconds: float) -> Iterator[Frame]:
+        secs = max(1, int(round(seconds)))
+        t0 = time.monotonic()
+        for ln in self._cmd(f"listen {self.kbps} {secs}", wait=secs + 5):
+            if ln.startswith("RX,"):
+                _, t, cid, _n, *data = ln.split(",")
+                ext = cid.startswith("x")
+                yield Frame(t0 + float(t) / 1000, int(cid.lstrip("x"), 16),
+                            bytes.fromhex(data[0]) if data and data[0] else b"", ext)
+
+    def close(self) -> None:
+        try:
+            self._cmd("close", wait=1.0)
+        except TimeoutError:
+            pass
+        self.ser.close()
 
 
 class Elm327Transport(Transport):

@@ -1,0 +1,9 @@
+sim tec 130
+req 21 21
+sim wait 100
+watch 500 3
+sim tec 0
+sim txfail busoff
+req 21 21
+sim wait 100
+req 21 21

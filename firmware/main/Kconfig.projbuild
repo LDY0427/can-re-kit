@@ -1,0 +1,10 @@
+menu "Stock CAN tool"
+    choice CANTOOL_BOARD
+        prompt "Board"
+        default CANTOOL_BOARD_DEVKIT
+        config CANTOOL_BOARD_DEVKIT
+            bool "ESP32-S3 dev board + transceiver module (console UART0, 921600 baud)"
+        config CANTOOL_BOARD_MODULE
+            bool "Stock CAN tool board Rev.A0 (console USB Serial/JTAG on the USB-C port)"
+    endchoice
+endmenu

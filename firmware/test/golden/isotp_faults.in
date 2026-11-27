@@ -1,0 +1,9 @@
+sim cutcf 2
+req 03
+sim dropcf 2
+req 03
+sim badsn 1
+req 03
+sim shortcf 3
+req 03
+req 03

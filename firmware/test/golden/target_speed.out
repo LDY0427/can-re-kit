@@ -1,0 +1,45 @@
+HELLO,stock-can-tool,2.0.1,sim,2,sim
+# stock-can-tool v2.0.1 가상 펌웨어(가상 버스 + 가상 ECU). 실제 차와 무관하다. help 로 명령 보기
+> 
+# 요청 ID는 7DF 또는 7E0~7E7
+ERR,14,bad_target
+# done
+> 
+# 요청 ID = 7E0
+# done
+> 
+# 요청 ID는 7DF 또는 7E0~7E7
+ERR,14,bad_target
+# done
+> 
+# 요청 ID는 7DF 또는 7E0~7E7
+ERR,14,bad_target
+# done
+> 
+# 요청 ID = 7DF
+# done
+> 
+# 요청 ID = 7E7
+# done
+> 
+# 요청 ID = 7DF
+# done
+> 
+# 지원 속도: 1000 500 250 125 100
+ERR,13,bad_speed
+# done
+> 
+# 요청 속도 = 250 kbps
+# done
+> 
+# 요청 속도 250 kbps, 요청 ID 7DF. 드라이버는 명령이 끝날 때마다 내린다
+# 가상 시각 1.000 s, TALK 켜짐
+# done
+> 
+# 요청 속도 = 500 kbps
+# done
+> 
+# 지원 속도: 1000 500 250 125 100
+ERR,13,bad_speed
+# done
+> 

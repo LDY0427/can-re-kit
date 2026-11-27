@@ -1,0 +1,77 @@
+HELLO,stock-can-tool,2.0.1,sim,2,sim
+# stock-can-tool v2.0.1 가상 펌웨어(가상 버스 + 가상 ECU). 실제 차와 무관하다. help 로 명령 보기
+> 
+# rpmsrc 01 0C / 4
+# done
+> 
+REQ,1000.000,7DF,2,01 0C,500kbps
+# 응답 없음(ACK는 받음): 속도와 결선은 맞다. 이 요청을 모르거나 주소가 다르다
+ERR,1,no_response
+# done
+> 
+# 읽기 서비스(01 02 03 07 09 0A 1A 21 22)만 회전수 요청으로 쓸 수 있다
+ERR,4,blocked_service
+# done
+> 
+# div는 1~1000
+ERR,10,bad_args
+# done
+> 
+# rpmsrc none
+# done
+> 
+# 예: req 21 21
+ERR,10,bad_args
+# done
+> 
+# rpmsrc 21 21 / 4
+# done
+> 
+REQ,1830.270,7DF,2,21 21,500kbps
+ANS,2138.810,7E8,8.54 ms,61 21 00 00
+# 회전수 0.0 rpm (rpmsrc 21 21 / 4)
+# done
+> 
+REQ,2168.810,7DF,2,21 21,500kbps
+ANS,2477.350,7E8,8.54 ms,61 21 00 00
+# 회전수 0.0 rpm (rpmsrc 21 21 / 4)
+# done
+> 
+SIM,rpm,2175
+# done
+> 
+REQ,2507.350,7DF,2,21 21,500kbps
+ANS,2815.890,7E8,8.54 ms,61 21 21 FC
+# 회전수 2175.0 rpm (rpmsrc 21 21 / 4)
+# done
+> 
+REQ,2845.890,7DF,2,21 64,500kbps
+ANS,3154.430,7E8,8.54 ms,61 64 00 00 00 18
+# done
+> 
+REQ,3184.430,7DF,2,01 05,500kbps
+ANS,3492.970,7E8,8.54 ms,41 05 54
+# 수온 44 C
+# done
+> 
+# 요청 ID = 7E0
+# done
+> 
+REQ,3522.970,7E0,2,21 99,500kbps
+ANS,3831.510,7E8,8.54 ms,7F 21 12
+# 거부 응답: 서비스 21, 코드 12 (지원하지 않는 하위 기능/번호)
+# done
+> 
+# 요청 ID = 7DF
+# done
+> 
+REQ,3861.510,7DF,2,21 99,500kbps
+# 응답 없음(ACK는 받음): 속도와 결선은 맞다. 이 요청을 모르거나 주소가 다르다
+ERR,1,no_response
+# done
+> 
+REQ,4691.780,7DF,2,01 0C,500kbps
+# 응답 없음(ACK는 받음): 속도와 결선은 맞다. 이 요청을 모르거나 주소가 다르다
+ERR,1,no_response
+# done
+> 
