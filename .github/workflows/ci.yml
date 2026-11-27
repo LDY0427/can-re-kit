@@ -1,7 +1,7 @@
 name: tests
 on: [push, pull_request]
 jobs:
-  test:
+  python:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -12,8 +12,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - run: pip install -e ".[test]"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: pip install -e ".[test]" ziglang==0.13.0
+      - name: firmware unit and golden tests (WebAssembly)
+        run: python firmware/test/host_build.py
       - run: pytest -q
       - run: |
           for f in profiles/*.yaml; do canre profile check "$f"; done
         shell: bash
+  esp32s3:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.5
+          target: esp32s3
+          path: firmware

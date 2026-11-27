@@ -1,0 +1,4 @@
+rpmsrc 21 21
+poll 50 5 21 21
+poll 0 6 21 21 / 01 11
+poll 20 12 21 21 / 01 05 every 4

@@ -1,0 +1,11 @@
+HELLO,stock-can-tool,2.0.1,sim,2,sim
+# stock-can-tool v2.0.1 가상 펌웨어(가상 버스 + 가상 ECU). 실제 차와 무관하다. help 로 명령 보기
+> 
+SIM,stale,3
+# done
+> 
+REQ,1000.000,7DF,2,21 21,500kbps
+RX,1304.540,7E8,8,03 41 05 54 AA AA AA AA
+ANS,1308.810,7E8,8.81 ms,61 21 00 00
+# done
+> 

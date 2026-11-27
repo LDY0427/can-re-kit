@@ -1,0 +1,10 @@
+sim stream 280 10 ack
+listen 500 2
+print off
+listen 500 1
+print on
+sim stream 300 100
+listen 500 1
+sim stream off
+sim wait 100
+auto

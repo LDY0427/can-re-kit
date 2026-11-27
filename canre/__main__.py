@@ -28,6 +28,13 @@ class Conn:
         kbps = bitrate_kbps or args.bitrate
         tx_id = int(args.tx_id, 16)
         allowed = frozenset(int(x, 16) for x in args.allow_tx_id)
+        if args.interface == "esp32":
+            from .transport import SctTransport
+
+            if not args.channel:
+                sys.exit("--channel is the serial port of the ESP32-S3 running firmware/, e.g. COM9")
+            self.t = SctTransport(args.channel, bitrate_kbps=kbps, tx_id=tx_id, allowed_tx=allowed, force=args.force)
+            return
         if args.interface == "elm327":
             if not args.channel:
                 sys.exit("--channel is the serial port of the ELM327, e.g. COM5 or /dev/rfcomm0")
@@ -89,7 +96,7 @@ def cmd_listen(args) -> int:
 def cmd_bitrate(args) -> int:
     from .sniff import summarise
 
-    if args.interface in ("sim", "elm327"):
+    if args.interface in ("sim", "elm327", "esp32"):
         sys.exit("bitrate search needs a real CAN adapter (python-can interface)")
     args.listen_only = True
     for kbps in args.rates:
@@ -318,7 +325,7 @@ def build_parser() -> argparse.ArgumentParser:
     g = conn.add_argument_group("connection")
     g.add_argument("-i", "--interface", default="sim",
                    help="python-can interface (slcan, gs_usb, pcan, socketcan, kvaser, vector...), "
-                        "'elm327', or 'sim' (default)")
+                        "'esp32' (firmware/ in this repo), 'elm327', or 'sim' (default)")
     g.add_argument("-c", "--channel", help="e.g. COM7, can0, /dev/ttyACM0")
     g.add_argument("-b", "--bitrate", type=int, default=500, help="kbps (default 500)")
     g.add_argument("--tx-id", default="7DF", help="request ID, hex (default 7DF; 7E0 = engine ECU direct)")

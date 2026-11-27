@@ -1,0 +1,7 @@
+rpmsrc 21 21
+sim rpm 2000
+scan21 01 66
+sim rpm 0
+target 7E0
+sim noack on
+scan21 01 66

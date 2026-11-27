@@ -1,0 +1,26 @@
+req zz
+req 1FF
+req
+req 01 02 03 04 05 06 07 08
+poll
+poll 50
+poll 3 10 21 21
+poll 50 10 21 21 /
+poll 50 10 / 21 21
+poll 50 0 21 21
+poll 50 40001 21 21
+poll 50 10 21 21 every 1
+poll 50 10 21 g1
+poll 50 10 21 21 / 1 / 2 / 3 / 4 / 5 / 6 / 7 / 8
+scan21 70 10
+scan21 xyz
+listen
+listen abc
+listen 500 0
+watch 123
+foo
+print maybe
+ping abc
+sim bogus
+sim rpm -5
+req 21 21 21 21 21 21 21

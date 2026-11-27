@@ -1,0 +1,6 @@
+sim noack on
+ping 500
+poll 50 10 21 21
+req 21 21
+sim noack off
+ping 500

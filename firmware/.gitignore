@@ -1,0 +1,12 @@
+build/
+build_module/
+sdkconfig
+sdkconfig.module
+sdkconfig.old
+managed_components/
+dependencies.lock
+test/build/
+test/out/
+pc/out/
+__pycache__/
+.cache/
